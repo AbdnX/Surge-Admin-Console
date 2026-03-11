@@ -48,7 +48,16 @@ export default function MerchantsPage() {
 
   const load = async (s?: string) => {
     setLoading(true);
-    try { const r = await api.merchants.list(s || undefined); setMerchants(r.data ?? []); }
+    try { 
+      let r;
+      if (s === 'pending') {
+        const data = await api.merchants.listPending();
+        r = { data, total: data.length };
+      } else {
+        r = await api.merchants.list(s || undefined); 
+      }
+      setMerchants(r.data ?? []); 
+    }
     catch { notify('Failed to load merchants', false); }
     finally { setLoading(false); }
   };
@@ -72,7 +81,11 @@ export default function MerchantsPage() {
 
   const handleApprove = async (id: string) => {
     setActionId(id);
-    try { await api.merchants.approve(id); notify('Merchant approved'); await load(filter); }
+    try { 
+      await api.merchants.updateStatus(id, 'approved'); 
+      notify('Merchant approved'); 
+      await load(filter); 
+    }
     catch (err) { notify(err instanceof Error ? err.message : 'Failed', false); }
     finally { setActionId(null); }
   };
@@ -80,7 +93,11 @@ export default function MerchantsPage() {
   const handleReject = async (id: string) => {
     if (!confirm('Reject this merchant?')) return;
     setActionId(id);
-    try { await api.merchants.reject(id); notify('Merchant rejected'); await load(filter); }
+    try { 
+      await api.merchants.updateStatus(id, 'rejected'); 
+      notify('Merchant rejected'); 
+      await load(filter); 
+    }
     catch (err) { notify(err instanceof Error ? err.message : 'Failed', false); }
     finally { setActionId(null); }
   };
@@ -181,13 +198,13 @@ export default function MerchantsPage() {
 
       {/* Status filters */}
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        {['', 'draft', 'approved', 'rejected'].map(s => (
+        {['', 'pending', 'approved', 'rejected'].map(s => (
           <button key={s} onClick={() => setFilter(s)} style={{
             background: filter === s ? '#0F172A' : '#F1F5F9',
             color: filter === s ? '#fff' : '#64748B',
             border: 'none', borderRadius: '8px', padding: '0.4rem 1rem', fontWeight: 600, fontSize: '0.8rem',
           }}>
-            {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            {s === '' ? 'All' : s === 'pending' ? 'Approvals' : s.charAt(0).toUpperCase() + s.slice(1)}
           </button>
         ))}
       </div>

@@ -21,8 +21,22 @@ export interface Merchant {
   country: string;
   onboarding_status: string;
   operating_status: string;
+  approval_status: string;
   flex_settings: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface Customer {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  verification_status: string;
+  account_status: string;
+  flex_score: number | null;
+  role: string;
+  created_at: string;
+  json?: any;
 }
 
 export interface DelinquencyCase {
@@ -50,10 +64,30 @@ export const api = {
       req<Merchant>('POST', `/identity/merchants/${id}/approve`, {}),
     reject: (id: string) =>
       req<Merchant>('POST', `/identity/merchants/${id}/reject`),
+    
+    // New Admin API Endpoints
+    listPending: () =>
+      req<Merchant[]>('GET', '/admin/merchants/pending'),
+    updateStatus: (id: string, status: 'approved' | 'rejected') =>
+      req<any>('PUT', `/admin/merchants/${id}/status`, { status }),
   },
   customers: {
     restrict: (id: string) =>
       req<{ id: string; account_status: string }>('POST', `/identity/customers/${id}/restrict`),
+    
+    // New Admin API Endpoints
+    list: (search?: string, onboardingCompleted?: boolean) => {
+      let url = '/admin/customers';
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (onboardingCompleted !== undefined) params.append('onboarding_completed', onboardingCompleted.toString());
+      if (params.toString()) url += `?${params.toString()}`;
+      return req<{ data: Customer[]; total: number }>('GET', url);
+    },
+    getDetail: (id: string) =>
+      req<{ ok: boolean; data: Customer }>('GET', `/admin/customers/${id}`),
+    suspend: (id: string) =>
+      req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/suspend`),
   },
   delinquency: {
     cases: () =>
