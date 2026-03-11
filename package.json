@@ -1,5 +1,5 @@
 {
-  "name": "@hilaq/flex-admin-console",
+  "name": "@flex-connect/admin-console",
   "version": "0.1.0",
   "private": true,
   "type": "module",
