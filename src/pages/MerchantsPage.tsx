@@ -202,7 +202,7 @@ export default function MerchantsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                {['Business', 'Type', 'Onboarding', 'Operating', 'Actions'].map(h => (
+                {['Business', 'Type', 'Onboarding', 'Operating', 'Gate', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>{h}</th>
                 ))}
               </tr>
@@ -217,6 +217,11 @@ export default function MerchantsPage() {
                   <td style={{ padding: '0.875rem 1rem', color: '#64748B', textTransform: 'capitalize' }}>{m.business_type}</td>
                   <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.onboarding_status} map={STATUS_COLORS} /></td>
                   <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.operating_status} map={OP_COLORS} /></td>
+                  <td style={{ padding: '0.875rem 1rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
+                      {(m as any).flex_settings?.min_accepted_tier ?? 'Bronze'}
+                    </span>
+                  </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {m.onboarding_status !== 'approved' && (
