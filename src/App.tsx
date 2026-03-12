@@ -1,5 +1,6 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
 import DelinquencyPage from './pages/DelinquencyPage';
@@ -38,11 +39,12 @@ const NAV: { id: Tab; label: string }[] = [
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
   const [pw, setPw] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
+    if (pw.trim() === ADMIN_PASSWORD) {
       sessionStorage.setItem(AUTH_KEY, '1');
       onAuth();
     } else {
@@ -66,19 +68,43 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
           <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Enter your admin password to continue.</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input
-            type="password"
-            placeholder="Admin password"
-            value={pw}
-            autoFocus
-            onChange={e => { setPw(e.target.value); setError(false); }}
-            style={{
-              padding: '0.7rem 0.9rem', borderRadius: '8px',
-              border: `1px solid ${error ? '#FCA5A5' : '#E2E8F0'}`,
-              fontSize: '0.9rem', color: '#0F172A', outline: 'none',
-              background: error ? '#FFF1F2' : '#fff',
-            }}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Admin password"
+              value={pw}
+              autoFocus
+              onChange={e => { setPw(e.target.value); setError(false); }}
+              style={{
+                width: '100%',
+                padding: '0.7rem 2.5rem 0.7rem 0.9rem', borderRadius: '8px',
+                border: `1px solid ${error ? '#FCA5A5' : '#E2E8F0'}`,
+                fontSize: '0.9rem', color: '#0F172A', outline: 'none',
+                background: error ? '#FFF1F2' : '#fff',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                cursor: 'pointer',
+                color: '#94A3B8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                outline: 'none',
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           {error && <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: '-0.5rem' }}>Incorrect password.</p>}
           <button type="submit" style={{
             background: '#0F172A', color: '#fff', border: 'none',
