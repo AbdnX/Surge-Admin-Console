@@ -74,7 +74,7 @@ export default function CustomersPage() {
   };
 
   const handleSuspend = async (id: string) => {
-    if (!confirm('Are you sure you want to suspend this customer account? They will be blocked from initializing new Flex sessions.')) return;
+    if (!confirm('Are you sure you want to suspend this customer account? They will be blocked from initializing new Surge sessions.')) return;
     setActionLoading(true);
     try {
       const res = await api.customers.suspend(id);
@@ -149,7 +149,7 @@ export default function CustomersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                {['Customer', 'Verification', 'Account Status', 'Flex Score', 'Actions'].map(h => (
+                {['Customer', 'Verification', 'Account Status', 'Surge Score', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>{h}</th>
                 ))}
               </tr>
@@ -228,7 +228,7 @@ export default function CustomersPage() {
 
               <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={F}>
-                  <label style={LBL}>Current Flex Score</label>
+                  <label style={LBL}>Current Surge Score</label>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                     <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>{selectedCustomer.flex_score ?? 0}</span>
                     <span style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 600 }}>points</span>

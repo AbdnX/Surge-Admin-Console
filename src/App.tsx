@@ -71,7 +71,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
         boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
       }}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <p style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '4px' }}>⚡ Flex Admin</p>
+          <p style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '4px' }}>⚡ Surge Admin</p>
           <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Enter your admin password to continue.</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -144,7 +144,7 @@ export default function App() {
         display: 'flex', alignItems: 'center', gap: '2rem',
         height: '56px', position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>⚡ Flex Admin</span>
+        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>⚡ Surge Admin</span>
         <nav style={{ display: 'flex', gap: '0.25rem', flex: 1 }}>
           {NAV.map(n => (
             <button key={n.id} onClick={() => setTab(n.id)} style={{
