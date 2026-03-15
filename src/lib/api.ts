@@ -1,4 +1,4 @@
-const BASE = 'https://api.gosurge.xyz/api/v1';
+const BASE = `${import.meta.env.VITE_API_URL ?? 'https://api.gosurge.xyz'}/api/v1`;
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = sessionStorage.getItem('flex_admin_token');
