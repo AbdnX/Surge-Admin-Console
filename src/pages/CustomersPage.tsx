@@ -8,7 +8,9 @@ const ACCOUNT_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 const VERIFICATION_COLORS: Record<string, { bg: string; color: string }> = {
-  verified: { bg: '#EFF6FF', color: '#3B82F6' },
+  verified: { bg: '#F0FDF4', color: '#16A34A' },
+  in_progress: { bg: '#FFFBEB', color: '#D97706' },
+  rejected: { bg: '#FFF1F2', color: '#E11D48' },
   unverified: { bg: '#F1F5F9', color: '#64748B' },
 };
 
@@ -73,6 +75,47 @@ export default function CustomersPage() {
     }
   };
 
+  const handleApproveVerification = async (id: string) => {
+    setActionLoading(true);
+    try {
+      const res = await api.customers.approveVerification(id);
+      if (res.ok) {
+        notify('Verification approved — customer is now verified');
+        if (selectedCustomer?.id === id) {
+          setSelectedCustomer({ ...selectedCustomer, verification_status: 'verified' });
+        }
+        await load();
+      } else {
+        notify('Failed to approve verification', false);
+      }
+    } catch {
+      notify('Error communicating with server', false);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectVerification = async (id: string) => {
+    if (!confirm('Reject this identity submission? The customer will be asked to resubmit.')) return;
+    setActionLoading(true);
+    try {
+      const res = await api.customers.rejectVerification(id);
+      if (res.ok) {
+        notify('Verification rejected');
+        if (selectedCustomer?.id === id) {
+          setSelectedCustomer({ ...selectedCustomer, verification_status: 'rejected' });
+        }
+        await load();
+      } else {
+        notify('Failed to reject verification', false);
+      }
+    } catch {
+      notify('Error communicating with server', false);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleSuspend = async (id: string) => {
     if (!confirm('Are you sure you want to suspend this customer account? They will be blocked from initializing new Surge sessions.')) return;
     setActionLoading(true);
@@ -125,8 +168,8 @@ export default function CustomersPage() {
           <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>🔍</span>
         </div>
         
-        <select 
-          style={{ ...INP, width: '180px' }} 
+        <select
+          style={{ ...INP, width: '200px' }}
           value={filterVerified === undefined ? '' : filterVerified.toString()}
           onChange={(e) => {
             const val = e.target.value;
@@ -135,7 +178,7 @@ export default function CustomersPage() {
         >
           <option value="">All Statuses</option>
           <option value="true">Verified Only</option>
-          <option value="false">Unverified Only</option>
+          <option value="false">Pending / Unverified</option>
         </select>
       </div>
 
@@ -235,29 +278,64 @@ export default function CustomersPage() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <label style={{ ...LBL, display: 'block', marginBottom: '8px' }}>Account Status</label>
-                  <Badge status={selectedCustomer.account_status} map={ACCOUNT_STATUS_COLORS} />
+                  <label style={{ ...LBL, display: 'block', marginBottom: '8px' }}>Verification Status</label>
+                  <Badge status={selectedCustomer.verification_status} map={VERIFICATION_COLORS} />
                 </div>
               </div>
+
+              {/* Identity submission */}
+              {selectedCustomer.verification_status === 'in_progress' && selectedCustomer.json?.id_number && (
+                <div style={{ marginTop: '1.5rem', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '1.25rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
+                    ⏳ Pending Identity Verification
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={F}>
+                      <label style={LBL}>ID Type</label>
+                      <p style={{ fontWeight: 700, textTransform: 'uppercase' }}>{selectedCustomer.json.id_type || '—'}</p>
+                    </div>
+                    <div style={F}>
+                      <label style={LBL}>ID Number</label>
+                      <code style={{ fontWeight: 700, background: '#FEF3C7', padding: '2px 8px', borderRadius: '4px', fontSize: '0.9rem' }}>
+                        {selectedCustomer.json.id_number}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div style={{ padding: '1.5rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button onClick={() => setSelectedCustomer(null)} style={{ background: 'none', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '0.6rem 1.2rem', fontWeight: 600, fontSize: '0.875rem', color: '#64748B', cursor: 'pointer' }}>
                 Close
               </button>
-              
+
+              {selectedCustomer.verification_status === 'in_progress' && (
+                <>
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => void handleRejectVerification(selectedCustomer.id)}
+                    style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1 }}
+                  >
+                    {actionLoading ? 'Processing…' : 'Reject'}
+                  </button>
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => void handleApproveVerification(selectedCustomer.id)}
+                    style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1, boxShadow: '0 2px 8px rgba(22,163,74,0.25)' }}
+                  >
+                    {actionLoading ? 'Processing…' : '✓ Approve Verification'}
+                  </button>
+                </>
+              )}
+
               {selectedCustomer.account_status !== 'suspended' && (
-                <button 
+                <button
                   disabled={actionLoading}
-                  onClick={() => handleSuspend(selectedCustomer.id)}
-                  style={{ 
-                    background: '#DC2626', color: '#fff', border: 'none', borderRadius: '8px', 
-                    padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.875rem', 
-                    cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
-                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)'
-                  }}
+                  onClick={() => void handleSuspend(selectedCustomer.id)}
+                  style={{ background: '#DC2626', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1, boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)' }}
                 >
-                  {actionLoading ? 'Suspending…' : 'Suspend Account'}
+                  {actionLoading ? 'Processing…' : 'Suspend Account'}
                 </button>
               )}
             </div>

@@ -94,6 +94,10 @@ export const api = {
       req<{ ok: boolean; data: Customer }>('GET', `/admin/customers/${id}`),
     suspend: (id: string) =>
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/suspend`),
+    approveVerification: (id: string) =>
+      req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/approve-verification`),
+    rejectVerification: (id: string) =>
+      req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/reject-verification`),
   },
   delinquency: {
     cases: () =>
