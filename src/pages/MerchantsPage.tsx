@@ -35,6 +35,7 @@ export default function MerchantsPage() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [tierSaving, setTierSaving] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +101,21 @@ export default function MerchantsPage() {
     }
     catch (err) { notify(err instanceof Error ? err.message : 'Failed', false); }
     finally { setActionId(null); }
+  };
+
+  const TIERS = ['Surge Restricted', 'Surge Starter', 'Surge Bronze', 'Surge Silver', 'Surge Gold', 'Surge Elite'];
+
+  const handleTierChange = async (id: string, tier: string) => {
+    setTierSaving(id);
+    try {
+      await api.merchants.updateTier(id, tier);
+      notify(`Min tier updated to ${tier}`);
+      await load(filter);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Failed to update tier', false);
+    } finally {
+      setTierSaving(null);
+    }
   };
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -235,9 +251,14 @@ export default function MerchantsPage() {
                   <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.onboarding_status} map={STATUS_COLORS} /></td>
                   <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.operating_status} map={OP_COLORS} /></td>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
-                      {(m as any).flex_settings?.min_accepted_tier ?? 'Bronze'}
-                    </span>
+                    <select
+                      disabled={tierSaving === m.id}
+                      value={(m as any).flex_settings?.min_accepted_tier ?? 'Surge Bronze'}
+                      onChange={e => handleTierChange(m.id, e.target.value)}
+                      style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '0.25rem 0.5rem', background: '#fff', opacity: tierSaving === m.id ? 0.5 : 1, cursor: 'pointer' }}
+                    >
+                      {TIERS.map(t => <option key={t} value={t}>{t.replace('Surge ', '')}</option>)}
+                    </select>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>

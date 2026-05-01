@@ -74,6 +74,8 @@ export const api = {
       req<Merchant[]>('GET', '/admin/merchants/pending'),
     updateStatus: (id: string, status: 'approved' | 'rejected') =>
       req<any>('PUT', `/admin/merchants/${id}/status`, { status }),
+    updateTier: (id: string, min_accepted_tier: string) =>
+      req<any>('PUT', `/admin/merchants/${id}/tier`, { min_accepted_tier }),
   },
   customers: {
     restrict: (id: string) =>
