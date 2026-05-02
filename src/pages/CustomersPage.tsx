@@ -284,9 +284,16 @@ export default function CustomersPage() {
       <Toast />
 
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px' }}>Customers</h1>
-        <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Monitor and manage all platform consumers.</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px' }}>Customers</h1>
+          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Monitor and manage all platform consumers.</p>
+        </div>
+        {!loading && (
+          <span style={{ background: '#F1F5F9', color: '#64748B', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            {customers.length} record{customers.length !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
       {/* Filters */}
@@ -302,7 +309,7 @@ export default function CustomersPage() {
           <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>🔍</span>
         </div>
         <select
-          style={{ ...INP, width: '200px' }}
+          style={{ ...INP, width: '220px' }}
           value={filterVerified === undefined ? '' : filterVerified.toString()}
           onChange={e => {
             const val = e.target.value;
@@ -311,7 +318,7 @@ export default function CustomersPage() {
         >
           <option value="">All Statuses</option>
           <option value="true">Verified Only</option>
-          <option value="false">Pending / Unverified</option>
+          <option value="false">Not Yet Verified</option>
         </select>
       </div>
 
