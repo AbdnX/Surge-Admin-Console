@@ -287,7 +287,7 @@ export default function CustomersPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px' }}>Customers</h1>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Monitor and manage all platform consumers.</p>
+          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>All platform users — consumers and merchants who shop.</p>
         </div>
         {!loading && (
           <span style={{ background: '#F1F5F9', color: '#64748B', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -345,7 +345,12 @@ export default function CustomersPage() {
                   onClick={() => void handleViewDetail(c.id)}
                 >
                   <td style={{ padding: '1rem' }}>
-                    <p style={{ fontWeight: 700, color: '#0F172A' }}>{c.full_name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <p style={{ fontWeight: 700, color: '#0F172A' }}>{c.full_name}</p>
+                      {c.role === 'merchant' && (
+                        <span style={{ background: '#EFF6FF', color: '#3B82F6', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Merchant</span>
+                      )}
+                    </div>
                     <p style={{ fontSize: '0.75rem', color: '#64748B' }}>{c.email}</p>
                   </td>
                   <td style={{ padding: '1rem' }}><Badge status={c.verification_status} map={VERIFICATION_COLORS} /></td>
