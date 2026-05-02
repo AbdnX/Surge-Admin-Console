@@ -241,62 +241,83 @@ export default function CustomersPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
         }} onClick={() => setSelectedCustomer(null)}>
           <div style={{
-            width: '100%', maxWidth: '600px', background: '#fff', borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            width: '100%', maxWidth: '660px', background: '#fff', borderRadius: '18px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)', overflow: 'hidden',
+            maxHeight: '90vh', display: 'flex', flexDirection: 'column',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1.5rem', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Customer Detail</h2>
               <button onClick={() => setSelectedCustomer(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', color: '#94A3B8', cursor: 'pointer' }}>×</button>
             </div>
             
-            <div style={{ padding: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
+            <div style={{ padding: '1.75rem', overflowY: 'auto', maxHeight: 'calc(90vh - 200px)' }}>
+              {/* Score Banner */}
+              <div style={{ background: '#0F172A', borderRadius: '14px', padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                <div>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Surge Score</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 900, color: (selectedCustomer.surge_score ?? 0) >= 400 ? '#4ade80' : (selectedCustomer.surge_score ?? 0) >= 0 ? '#fb923c' : '#f87171' }}>
+                      {selectedCustomer.surge_score ?? 0}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>pts</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                  <div>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Verification</p>
+                    <Badge status={selectedCustomer.verification_status} map={VERIFICATION_COLORS} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Account</p>
+                    <Badge status={selectedCustomer.account_status} map={ACCOUNT_STATUS_COLORS} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 <div style={F}>
                   <label style={LBL}>Full Name</label>
-                  <p style={{ fontWeight: 600 }}>{selectedCustomer.full_name}</p>
+                  <p style={{ fontWeight: 700, color: '#0F172A' }}>{selectedCustomer.full_name}</p>
                 </div>
                 <div style={F}>
                   <label style={LBL}>Email Address</label>
-                  <p style={{ fontWeight: 600 }}>{selectedCustomer.email}</p>
+                  <p style={{ fontWeight: 600, color: '#0F172A' }}>{selectedCustomer.email}</p>
                 </div>
                 <div style={F}>
                   <label style={LBL}>Phone Number</label>
-                  <p style={{ fontWeight: 600 }}>{selectedCustomer.phone || '—'}</p>
+                  <p style={{ fontWeight: 600, color: '#0F172A' }}>{selectedCustomer.phone || '—'}</p>
+                </div>
+                <div style={F}>
+                  <label style={LBL}>Role</label>
+                  <p style={{ fontWeight: 600, color: '#0F172A', textTransform: 'capitalize' }}>{selectedCustomer.role || '—'}</p>
                 </div>
                 <div style={F}>
                   <label style={LBL}>Customer ID</label>
-                  <code style={{ fontSize: '0.75rem', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>{selectedCustomer.id}</code>
+                  <code style={{ fontSize: '0.72rem', background: '#E2E8F0', padding: '2px 6px', borderRadius: '4px', wordBreak: 'break-all' }}>{selectedCustomer.id}</code>
                 </div>
-              </div>
-
-              <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={F}>
-                  <label style={LBL}>Current Surge Score</label>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>{selectedCustomer.surge_score ?? 0}</span>
-                    <span style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 600 }}>points</span>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <label style={{ ...LBL, display: 'block', marginBottom: '8px' }}>Verification Status</label>
-                  <Badge status={selectedCustomer.verification_status} map={VERIFICATION_COLORS} />
+                  <label style={LBL}>Joined</label>
+                  <p style={{ fontWeight: 600, color: '#0F172A' }}>
+                    {selectedCustomer.created_at ? new Date(selectedCustomer.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'}
+                  </p>
                 </div>
               </div>
 
-              {/* Identity submission */}
+              {/* Pending Identity Verification */}
               {selectedCustomer.verification_status === 'in_progress' && selectedCustomer.json?.id_number && (
-                <div style={{ marginTop: '1.5rem', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '1.25rem' }}>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
-                    ⏳ Pending Identity Verification
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '1.25rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.875rem' }}>
+                    ⏳ Pending Identity Submission
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div style={F}>
                       <label style={LBL}>ID Type</label>
-                      <p style={{ fontWeight: 700, textTransform: 'uppercase' }}>{selectedCustomer.json.id_type || '—'}</p>
+                      <p style={{ fontWeight: 700, textTransform: 'uppercase', color: '#92400E' }}>{selectedCustomer.json.id_type || '—'}</p>
                     </div>
                     <div style={F}>
                       <label style={LBL}>ID Number</label>
-                      <code style={{ fontWeight: 700, background: '#FEF3C7', padding: '2px 8px', borderRadius: '4px', fontSize: '0.9rem' }}>
+                      <code style={{ fontWeight: 700, background: '#FEF3C7', padding: '3px 10px', borderRadius: '6px', fontSize: '1rem', color: '#78350F' }}>
                         {selectedCustomer.json.id_number}
                       </code>
                     </div>

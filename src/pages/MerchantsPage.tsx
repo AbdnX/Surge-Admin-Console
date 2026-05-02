@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api, type Merchant } from '../lib/api';
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -30,6 +30,132 @@ function Badge({ status, map }: { status: string; map: Record<string, { bg: stri
 
 const EMPTY = { legal_name: '', display_name: '', business_type: 'retail', country: 'NG', email: '', phone: '', password: '' };
 
+function MerchantDetailModal({ merchant, onClose, onApprove, onReject, onTierChange, actionId, tierSaving }: {
+  merchant: Merchant;
+  onClose: () => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onTierChange: (id: string, tier: string) => void;
+  actionId: string | null;
+  tierSaving: string | null;
+}) {
+  const TIERS = ['Surge Restricted', 'Surge Starter', 'Surge Bronze', 'Surge Silver', 'Surge Gold', 'Surge Elite'];
+  const fs = merchant.flex_settings ?? {};
+  const currentTier = (fs as any).min_accepted_tier ?? 'Surge Bronze';
+
+  const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+      <span style={LBL}>{label}</span>
+      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>{value ?? '—'}</span>
+    </div>
+  );
+
+  return (
+    <div
+      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ width: '100%', maxWidth: '680px', maxHeight: '90vh', background: '#fff', borderRadius: '18px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: '1.25rem 1.75rem', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: '1.125rem', color: '#fff', marginBottom: '2px' }}>{merchant.display_name}</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{merchant.legal_name}</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '1.75rem' }}>
+          {/* Status badges */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            <Badge status={merchant.onboarding_status} map={STATUS_COLORS} />
+            <Badge status={merchant.operating_status} map={OP_COLORS} />
+          </div>
+
+          {/* Business Info */}
+          <section style={{ marginBottom: '1.5rem' }}>
+            <p style={{ ...LBL, marginBottom: '0.875rem', fontSize: '0.7rem' }}>Business Information</p>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <DetailRow label="Display Name" value={merchant.display_name} />
+              <DetailRow label="Legal Name" value={merchant.legal_name} />
+              <DetailRow label="Business Type" value={<span style={{ textTransform: 'capitalize' }}>{merchant.business_type}</span>} />
+              <DetailRow label="Country" value={merchant.country} />
+              <DetailRow label="Merchant ID" value={<code style={{ fontSize: '0.72rem', background: '#E2E8F0', padding: '2px 6px', borderRadius: '4px' }}>{merchant.id}</code>} />
+              <DetailRow label="Created" value={merchant.created_at ? new Date(merchant.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'} />
+            </div>
+          </section>
+
+          {/* Surge Settings */}
+          <section style={{ marginBottom: '1.5rem' }}>
+            <p style={{ ...LBL, marginBottom: '0.875rem', fontSize: '0.7rem' }}>Surge Settings</p>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <DetailRow label="Min Accepted Tier" value={currentTier} />
+              <DetailRow label="Default Deposit %" value={(fs as any).default_deposit_percent != null ? `${(fs as any).default_deposit_percent}%` : '—'} />
+              <DetailRow label="Max Installments" value={(fs as any).max_installment_count ?? '—'} />
+              <DetailRow label="Release Rule" value={(fs as any).release_rule_type?.replace(/_/g, ' ') ?? '—'} />
+              <DetailRow label="Allowed Schedules" value={(fs as any).allowed_schedule_types?.join(', ') ?? '—'} />
+              <DetailRow label="Risk Bearer" value={(fs as any).risk_bearer?.replace(/_/g, ' ') ?? '—'} />
+              {(fs as any).webhook_url && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <DetailRow label="Webhook URL" value={<code style={{ fontSize: '0.7rem', wordBreak: 'break-all' }}>{(fs as any).webhook_url}</code>} />
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Min Tier Override */}
+          <section>
+            <p style={{ ...LBL, marginBottom: '0.875rem', fontSize: '0.7rem' }}>Customer Gate</p>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A', marginBottom: '2px' }}>Minimum Accepted Tier</p>
+                <p style={{ fontSize: '0.75rem', color: '#64748B' }}>Customers below this tier cannot initiate a Surge plan with this merchant.</p>
+              </div>
+              <select
+                disabled={tierSaving === merchant.id}
+                value={currentTier}
+                onChange={e => onTierChange(merchant.id, e.target.value)}
+                style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0F172A', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '0.4rem 0.75rem', background: '#fff', opacity: tierSaving === merchant.id ? 0.5 : 1, cursor: 'pointer' }}
+              >
+                {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </section>
+        </div>
+
+        {/* Footer Actions */}
+        <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '0.55rem 1.25rem', fontWeight: 600, fontSize: '0.875rem', color: '#64748B', cursor: 'pointer' }}>
+            Close
+          </button>
+          {merchant.onboarding_status !== 'rejected' && (
+            <button
+              disabled={!!actionId}
+              onClick={() => onReject(merchant.id)}
+              style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionId ? 0.6 : 1 }}
+            >
+              {actionId === merchant.id ? 'Processing…' : 'Reject'}
+            </button>
+          )}
+          {merchant.onboarding_status !== 'approved' && (
+            <button
+              disabled={!!actionId}
+              onClick={() => onApprove(merchant.id)}
+              style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionId ? 0.6 : 1, boxShadow: '0 2px 8px rgba(22,163,74,0.25)' }}
+            >
+              {actionId === merchant.id ? 'Processing…' : '✓ Approve'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [filter, setFilter] = useState('');
@@ -41,6 +167,7 @@ export default function MerchantsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [lastCreated, setLastCreated] = useState<{ email: string; merchantId: string } | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
 
   const notify = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -261,7 +388,13 @@ export default function MerchantsPage() {
                     </select>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => setSelectedMerchant(m)}
+                        style={{ background: '#F1F5F9', color: '#0F172A', border: 'none', borderRadius: '6px', padding: '0.35rem 0.85rem', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}
+                      >
+                        View
+                      </button>
                       {m.onboarding_status !== 'approved' && (
                         <button disabled={actionId === m.id} onClick={() => handleApprove(m.id)} style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.35rem 0.85rem', fontWeight: 600, fontSize: '0.78rem', opacity: actionId === m.id ? 0.6 : 1 }}>
                           Approve
@@ -281,6 +414,18 @@ export default function MerchantsPage() {
         )}
       </div>
       <p style={{ marginTop: '0.75rem', color: '#94A3B8', fontSize: '0.78rem' }}>{merchants.length} merchant{merchants.length !== 1 ? 's' : ''}</p>
+
+      {selectedMerchant && (
+        <MerchantDetailModal
+          merchant={selectedMerchant}
+          onClose={() => setSelectedMerchant(null)}
+          onApprove={async (id) => { await handleApprove(id); setSelectedMerchant(prev => prev ? { ...prev, onboarding_status: 'approved' } : null); }}
+          onReject={async (id) => { await handleReject(id); setSelectedMerchant(prev => prev ? { ...prev, onboarding_status: 'rejected' } : null); }}
+          onTierChange={async (id, tier) => { await handleTierChange(id, tier); setSelectedMerchant(prev => prev ? { ...prev, flex_settings: { ...(prev.flex_settings ?? {}), min_accepted_tier: tier } } : null); }}
+          actionId={actionId}
+          tierSaving={tierSaving}
+        />
+      )}
     </div>
   );
 }
