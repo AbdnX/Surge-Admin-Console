@@ -133,6 +133,7 @@ export default function App() {
 
   const handleLogout = () => {
     sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem('flex_admin_token');
     setAuthed(false);
   };
 

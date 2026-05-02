@@ -10,6 +10,12 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401) {
+    sessionStorage.removeItem('flex_admin_token');
+    sessionStorage.removeItem('flex_admin_authed');
+    window.location.reload();
+    throw new Error('Session expired. Please log in again.');
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { detail?: string };
     throw new Error(err.detail ?? `HTTP ${res.status}`);
