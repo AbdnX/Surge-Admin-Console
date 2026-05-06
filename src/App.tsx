@@ -1,6 +1,6 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight } from 'lucide-react';
 import { api } from './lib/api';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
@@ -12,12 +12,15 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '800px', margin: '2rem auto' }}>
-          <h2 style={{ color: '#DC2626', marginBottom: '1rem' }}>Runtime Error</h2>
-          <pre style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '8px', padding: '1rem', fontSize: '0.8rem', whiteSpace: 'pre-wrap', color: '#9F1239' }}>
+        <div className="p-8 max-w-2xl mx-auto mt-8">
+          <h2 className="text-red-600 font-bold text-lg mb-3">Runtime Error</h2>
+          <pre className="bg-red-50 border border-red-100 rounded-xl p-4 text-[12px] whitespace-pre-wrap text-red-800 font-mono">
             {(this.state.error as Error).message}{'\n\n'}{(this.state.error as Error).stack}
           </pre>
-          <button onClick={() => this.setState({ error: null })} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#0F172A', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+          <button
+            onClick={() => this.setState({ error: null })}
+            className="mt-4 px-4 py-2 bg-[#0F172A] text-white rounded-lg text-[13px] font-bold"
+          >
             Retry
           </button>
         </div>
@@ -27,24 +30,24 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
-// Simple admin gate — change this before going to production
-const ADMIN_PASSWORD = 'flex-admin-2026';
 const AUTH_KEY = 'flex_admin_authed';
-
 type Tab = 'merchants' | 'customers' | 'delinquency';
-const NAV: { id: Tab; label: string }[] = [
-  { id: 'merchants', label: 'Merchants' },
-  { id: 'customers', label: 'Customers' },
-  { id: 'delinquency', label: 'Delinquency' },
+
+const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
+  { id: 'merchants',   label: 'Merchants',   icon: Building2,     desc: 'Manage merchant accounts' },
+  { id: 'customers',   label: 'Customers',   icon: Users,         desc: 'View consumer profiles'   },
+  { id: 'delinquency', label: 'Delinquency', icon: AlertTriangle, desc: 'Monitor overdue cases'    },
 ];
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
   const [pw, setPw] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await api.auth.login(pw.trim());
       if (res.ok && res.data.token) {
@@ -54,72 +57,90 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
       } else {
         setError(true);
       }
-    } catch (err) {
+    } catch {
       setError(true);
+    } finally {
       setPw('');
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: '#F8FAFC',
-    }}>
-      <div style={{
-        width: '100%', maxWidth: '360px', background: '#fff',
-        border: '1px solid #E2E8F0', borderRadius: '16px', padding: '2rem',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <p style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '4px' }}>⚡ Surge Admin</p>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Enter your admin password to continue.</p>
-        </div>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ position: 'relative' }}>
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Admin password"
-              value={pw}
-              autoFocus
-              onChange={e => { setPw(e.target.value); setError(false); }}
-              style={{
-                width: '100%',
-                padding: '0.7rem 2.5rem 0.7rem 0.9rem', borderRadius: '8px',
-                border: `1px solid ${error ? '#FCA5A5' : '#E2E8F0'}`,
-                fontSize: '0.9rem', color: '#0F172A', outline: 'none',
-                background: error ? '#FFF1F2' : '#fff',
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                cursor: 'pointer',
-                color: '#94A3B8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                outline: 'none',
-              }}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+    <div className="min-h-screen flex bg-[#F7F8FA]">
+      {/* Left panel */}
+      <div className="w-[420px] bg-[#0F172A] flex flex-col justify-between p-10 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[10px] bg-[#00d66f] flex items-center justify-center">
+            <Zap size={16} color="#0F172A" strokeWidth={2.5} />
           </div>
-          {error && <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: '-0.5rem' }}>Incorrect password.</p>}
-          <button type="submit" style={{
-            background: '#0F172A', color: '#fff', border: 'none',
-            borderRadius: '8px', padding: '0.7rem', fontWeight: 700, fontSize: '0.9rem',
-          }}>
-            Sign In
-          </button>
-        </form>
+          <span className="font-[800] text-[17px] text-white tracking-tight">Surge</span>
+          <span className="text-[10px] font-bold text-[#00d66f] bg-[rgba(0,214,111,0.15)] px-2 py-0.5 rounded-full tracking-widest uppercase">Admin</span>
+        </div>
+
+        <div>
+          <p className="text-[28px] font-black text-white leading-tight mb-3 tracking-tight">
+            Platform<br />Control Centre
+          </p>
+          <p className="text-[14px] text-white/40 leading-relaxed">
+            Manage merchants, monitor customer accounts, and oversee delinquency cases from one place.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {NAV.map(({ label, icon: Icon, desc }) => (
+            <div key={label} className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                <Icon size={14} color="rgba(255,255,255,0.4)" />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-white/70">{label}</p>
+                <p className="text-[11px] text-white/30">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-[380px]">
+          <div className="mb-8">
+            <h1 className="text-[24px] font-black text-[#0F172A] mb-1.5 tracking-tight">Sign in</h1>
+            <p className="text-[14px] text-[#64748B]">Enter your admin credentials to access the console.</p>
+          </div>
+
+          <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  placeholder="Admin password"
+                  value={pw}
+                  autoFocus
+                  onChange={e => { setPw(e.target.value); setError(false); }}
+                  className={`w-full px-3.5 py-3 pr-11 rounded-[10px] border-[1.5px] text-[14px] text-[#0F172A] bg-white outline-none transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-[#E2E8F0]'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] p-1"
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {error && <p className="text-[#E11D48] text-[12px] font-semibold mt-1.5">Incorrect password. Please try again.</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !pw}
+              className="flex items-center justify-center gap-2 py-3 bg-[#0F172A] text-white rounded-[10px] font-bold text-[14px] disabled:opacity-50 transition-opacity"
+            >
+              {loading ? 'Signing in…' : <>Sign in <ChevronRight size={16} /></>}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -137,41 +158,78 @@ export default function App() {
     setAuthed(false);
   };
 
+  const activeNav = NAV.find(n => n.id === tab)!;
+
   return (
     <ErrorBoundary>
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={{
-        background: '#0F172A', color: '#fff', padding: '0 2rem',
-        display: 'flex', alignItems: 'center', gap: '2rem',
-        height: '56px', position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>⚡ Surge Admin</span>
-        <nav style={{ display: 'flex', gap: '0.25rem', flex: 1 }}>
-          {NAV.map(n => (
-            <button key={n.id} onClick={() => setTab(n.id)} style={{
-              background: tab === n.id ? 'rgba(255,255,255,0.12)' : 'transparent',
-              color: tab === n.id ? '#fff' : 'rgba(255,255,255,0.55)',
-              border: 'none', borderRadius: '6px', padding: '0.4rem 0.9rem',
-              fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.15s',
-            }}>
-              {n.label}
+      <div className="min-h-screen flex bg-[#F7F8FA]">
+
+        {/* ── Sidebar ── */}
+        <aside className="w-[220px] bg-[#0F172A] flex flex-col shrink-0 sticky top-0 h-screen">
+          {/* Logo */}
+          <div className="h-[60px] flex items-center gap-2.5 px-4 border-b border-white/[0.07] shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-[#00d66f] flex items-center justify-center shrink-0">
+              <Zap size={13} color="#0F172A" strokeWidth={2.5} />
+            </div>
+            <span className="font-[800] text-white text-[15px] tracking-tight">Surge</span>
+            <span className="text-[10px] font-bold text-[#00d66f] bg-[rgba(0,214,111,0.15)] px-1.5 py-0.5 rounded-full tracking-widest uppercase">Admin</span>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
+            <p className="px-3 py-1 mb-1 text-[10px] font-bold text-white/25 uppercase tracking-widest">Management</p>
+            {NAV.map(({ id, label, icon: Icon }) => {
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold w-full text-left transition-all ${
+                    active ? 'bg-white/10 text-white' : 'text-white/45 hover:bg-white/[0.06] hover:text-white/75'
+                  }`}
+                >
+                  <Icon size={14} color={active ? '#00d66f' : 'currentColor'} strokeWidth={active ? 2.5 : 2} />
+                  {label}
+                  {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#00d66f]" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Sign out */}
+          <div className="px-2 py-3 border-t border-white/[0.07]">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold text-white/30 w-full hover:bg-red-500/10 hover:text-red-400 transition-all"
+            >
+              <LogOut size={14} />
+              Sign out
             </button>
-          ))}
-        </nav>
-        <button onClick={handleLogout} style={{
-          background: 'transparent', color: 'rgba(255,255,255,0.55)',
-          border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px',
-          padding: '0.3rem 0.75rem', fontSize: '0.8rem', fontWeight: 600,
-        }}>
-          Sign Out
-        </button>
-      </header>
-      <main style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
-        {tab === 'merchants' && <MerchantsPage />}
-        {tab === 'customers' && <CustomersPage />}
-        {tab === 'delinquency' && <DelinquencyPage />}
-      </main>
-    </div>
+          </div>
+        </aside>
+
+        {/* ── Main ── */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Top bar */}
+          <header className="h-[60px] bg-white border-b border-[#E8ECF0] flex items-center justify-between px-7 shrink-0 sticky top-0 z-10">
+            <div className="flex items-center gap-2">
+              <activeNav.icon size={15} color="#64748B" />
+              <h1 className="text-[15px] font-bold text-[#0F172A]">{activeNav.label}</h1>
+            </div>
+            <span className="text-[10px] font-bold text-[#64748B] bg-[#F1F5F9] px-2.5 py-1 rounded-md uppercase tracking-widest">
+              Admin Console
+            </span>
+          </header>
+
+          {/* Page content */}
+          <main className="flex-1 p-7 overflow-y-auto">
+            {tab === 'merchants'   && <MerchantsPage />}
+            {tab === 'customers'   && <CustomersPage />}
+            {tab === 'delinquency' && <DelinquencyPage />}
+          </main>
+        </div>
+
+      </div>
     </ErrorBoundary>
   );
 }

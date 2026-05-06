@@ -6,7 +6,6 @@ const ACCOUNT_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   suspended:  { bg: '#FFF1F2', color: '#E11D48' },
   restricted: { bg: '#FFF7ED', color: '#F97316' },
 };
-
 const VERIFICATION_COLORS: Record<string, { bg: string; color: string }> = {
   verified:    { bg: '#F0FDF4', color: '#16A34A' },
   in_progress: { bg: '#FFFBEB', color: '#D97706' },
@@ -14,15 +13,13 @@ const VERIFICATION_COLORS: Record<string, { bg: string; color: string }> = {
   unverified:  { bg: '#F1F5F9', color: '#64748B' },
 };
 
-const F: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '4px' };
-const LBL: React.CSSProperties = { fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' };
-const INP: React.CSSProperties = { padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.875rem', color: '#0F172A', background: '#fff', outline: 'none' };
+const inputCls = 'w-full px-3 py-2 rounded-[8px] border border-[#E2E8F0] text-[14px] text-[#0F172A] bg-white outline-none';
 
 function Badge({ status, map }: { status: string; map: Record<string, { bg: string; color: string }> }) {
   const safe = status ?? 'unknown';
   const s = map[safe] ?? { bg: '#F1F5F9', color: '#64748B' };
   return (
-    <span style={{ background: s.bg, color: s.color, padding: '3px 12px', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'capitalize' }}>
+    <span style={{ background: s.bg, color: s.color }} className="px-3 py-0.5 rounded-full text-[11px] font-bold capitalize">
       {safe.replace(/_/g, ' ')}
     </span>
   );
@@ -30,14 +27,14 @@ function Badge({ status, map }: { status: string; map: Record<string, { bg: stri
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={F}>
-      <span style={LBL}>{label}</span>
-      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>{value ?? '—'}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">{label}</span>
+      <span className="font-semibold text-[14px] text-[#0F172A]">{value ?? '—'}</span>
     </div>
   );
 }
 
-// ── Customer Detail Page ───────────────────────────────────────────────────────
+// ── Customer Detail Page ──────────────────────────────────────────────────────
 function CustomerDetailPage({ customer: initial, onBack, notify }: {
   customer: Customer;
   onBack: () => void;
@@ -90,126 +87,128 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
     finally { setActionLoading(false); }
   };
 
-  const scoreColor = (customer.surge_score ?? 0) >= 400 ? '#4ade80' : (customer.surge_score ?? 0) >= 0 ? '#fb923c' : '#f87171';
+  const score = customer.surge_score ?? 0;
+  const scoreColor = score >= 400 ? '#00d66f' : score >= 0 ? '#F97316' : '#E11D48';
 
   return (
     <div>
-      {/* Back nav */}
       <button
         onClick={onBack}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#64748B', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', marginBottom: '1.75rem', padding: 0 }}
+        className="flex items-center gap-1.5 text-[#64748B] text-[14px] font-semibold mb-7 hover:text-[#0F172A] transition-colors"
       >
         ← Back to Customers
       </button>
 
-      {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '4px', color: '#0F172A' }}>{customer.full_name}</h1>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>{customer.email}</p>
+          <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">{customer.full_name}</h1>
+          <p className="text-[14px] text-[#64748B]">{customer.email}</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 items-center flex-wrap">
           <Badge status={customer.verification_status} map={VERIFICATION_COLORS} />
           <Badge status={customer.account_status} map={ACCOUNT_STATUS_COLORS} />
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-
+      <div className="grid grid-cols-2 gap-5">
         {/* Score card */}
-        <section style={{ background: '#0F172A', borderRadius: '14px', padding: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <section className="bg-[#0F172A] rounded-2xl p-6 flex items-center justify-between">
           <div>
-            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Surge Score</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-              <span style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1, color: scoreColor }}>{customer.surge_score ?? 0}</span>
-              <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>pts</span>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Surge Score</p>
+            <div className="flex items-baseline gap-1.5">
+              <span style={{ color: scoreColor }} className="text-5xl font-black leading-none">{score}</span>
+              <span className="text-[14px] text-white/35 font-semibold">pts</span>
             </div>
           </div>
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="text-right flex flex-col gap-3">
             <div>
-              <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>Verification</p>
+              <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5">Verification</p>
               <Badge status={customer.verification_status} map={VERIFICATION_COLORS} />
             </div>
             <div>
-              <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>Account</p>
+              <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5">Account</p>
               <Badge status={customer.account_status} map={ACCOUNT_STATUS_COLORS} />
             </div>
           </div>
         </section>
 
         {/* Contact Info */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Contact Information</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Contact Information</p>
+          </div>
+          <div className="p-5 grid grid-cols-2 gap-5">
             <DetailRow label="Full Name" value={customer.full_name} />
             <DetailRow label="Email" value={customer.email} />
             <DetailRow label="Phone" value={customer.phone || '—'} />
-            <DetailRow label="Role" value={<span style={{ textTransform: 'capitalize' }}>{customer.role || '—'}</span>} />
+            <DetailRow label="Role" value={<span className="capitalize">{customer.role || '—'}</span>} />
             <DetailRow label="Joined" value={customer.created_at ? new Date(customer.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'} />
-            <div style={F}>
-              <span style={LBL}>Customer ID</span>
-              <code style={{ fontSize: '0.68rem', background: '#F1F5F9', padding: '3px 7px', borderRadius: '5px', color: '#475569', wordBreak: 'break-all' }}>{customer.id}</code>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Customer ID</span>
+              <code className="text-[11px] bg-[#F1F5F9] px-1.5 py-0.5 rounded-md text-[#475569] break-all">{customer.id}</code>
             </div>
           </div>
         </section>
 
-        {/* Identity Submission — only shown when pending */}
+        {/* Pending identity submission */}
         {customer.verification_status === 'in_progress' && customer.json?.id_number && (
-          <section style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '14px', padding: '1.5rem' }}>
-            <p style={{ ...LBL, color: '#92400E', marginBottom: '1.25rem' }}>⏳ Pending Identity Submission</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div style={F}>
-                <span style={LBL}>ID Type</span>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', textTransform: 'uppercase', color: '#92400E' }}>{customer.json.id_type || '—'}</span>
+          <section className="bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-amber-200">
+              <p className="text-[13px] font-bold text-amber-800">⏳ Pending Identity Submission</p>
+            </div>
+            <div className="p-5 grid grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">ID Type</span>
+                <span className="font-black text-[15px] uppercase text-amber-900">{customer.json.id_type || '—'}</span>
               </div>
-              <div style={F}>
-                <span style={LBL}>ID Number</span>
-                <code style={{ fontWeight: 700, background: '#FEF3C7', padding: '4px 12px', borderRadius: '6px', fontSize: '1.05rem', color: '#78350F' }}>
-                  {customer.json.id_number}
-                </code>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">ID Number</span>
+                <code className="font-bold bg-amber-100 px-3 py-1 rounded-lg text-[17px] text-amber-900">{customer.json.id_number}</code>
               </div>
             </div>
           </section>
         )}
 
         {/* Actions */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Actions</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Actions</p>
+          </div>
+          <div className="p-5 flex flex-col gap-3">
             {customer.verification_status === 'in_progress' && (
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div className="flex gap-3">
                 <button
                   disabled={actionLoading}
                   onClick={() => void handleApproveVerification()}
-                  style={{ flex: 1, background: '#16A34A', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.65rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1, boxShadow: '0 2px 8px rgba(22,163,74,0.2)' }}
+                  className="flex-1 py-2.5 bg-[#16A34A] text-white rounded-xl text-[13px] font-bold disabled:opacity-60 shadow-sm shadow-green-200"
                 >
                   {actionLoading ? 'Processing…' : '✓ Approve Verification'}
                 </button>
                 <button
                   disabled={actionLoading}
                   onClick={() => void handleRejectVerification()}
-                  style={{ flex: 1, background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.65rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1 }}
+                  className="flex-1 py-2.5 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-xl text-[13px] font-bold disabled:opacity-60"
                 >
                   {actionLoading ? 'Processing…' : 'Reject'}
                 </button>
               </div>
             )}
             {customer.verification_status === 'verified' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', padding: '0.6rem 1rem' }}>
-                <span style={{ color: '#16A34A', fontWeight: 700, fontSize: '0.875rem' }}>✓ Identity verified</span>
+              <div className="flex items-center gap-2 bg-[#F0FDF4] border border-[#86EFAC] rounded-xl px-4 py-2.5">
+                <span className="text-[#16A34A] font-bold text-[13px]">✓ Identity verified</span>
               </div>
             )}
             {customer.account_status !== 'suspended' ? (
               <button
                 disabled={actionLoading}
                 onClick={() => void handleSuspend()}
-                style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.65rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1 }}
+                className="py-2.5 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-xl text-[13px] font-bold disabled:opacity-60"
               >
                 {actionLoading ? 'Processing…' : 'Suspend Account'}
               </button>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.6rem 1rem' }}>
-                <span style={{ color: '#E11D48', fontWeight: 700, fontSize: '0.875rem' }}>Account suspended</span>
+              <div className="flex items-center gap-2 bg-[#FFF1F2] border border-[#FECDD3] rounded-xl px-4 py-2.5">
+                <span className="text-[#E11D48] font-bold text-[13px]">Account suspended</span>
               </div>
             )}
           </div>
@@ -259,12 +258,11 @@ export default function CustomersPage() {
   };
 
   const Toast = () => toast ? (
-    <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1000, background: toast.ok ? '#0F172A' : '#DC2626', color: '#fff', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, fontSize: '0.875rem', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', maxWidth: '340px' }}>
+    <div className={`fixed top-4 right-4 z-[1000] px-5 py-3 rounded-xl text-white text-[13px] font-semibold shadow-xl max-w-xs ${toast.ok ? 'bg-[#0F172A]' : 'bg-red-600'}`}>
       {toast.msg}
     </div>
   ) : null;
 
-  // ── Detail Page ──
   if (selectedCustomer) {
     return (
       <>
@@ -278,38 +276,37 @@ export default function CustomersPage() {
     );
   }
 
-  // ── List Page ──
   return (
     <div>
       <Toast />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px' }}>Customers</h1>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>All platform users — consumers and merchants who shop.</p>
+          <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">Customers</h1>
+          <p className="text-[13px] text-[#64748B]">All platform users — consumers and merchants who shop.</p>
         </div>
         {!loading && (
-          <span style={{ background: '#F1F5F9', color: '#64748B', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+          <span className="bg-[#F1F5F9] text-[#64748B] px-3 py-1 rounded-full text-[12px] font-bold">
             {customers.length} record{customers.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
+      <div className="flex gap-3 mb-5 items-center">
+        <div className="flex-1 relative">
           <input
             type="text"
             placeholder="Search by name or email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ ...INP, width: '100%', paddingLeft: '2.5rem' }}
+            className={`${inputCls} pl-9`}
           />
-          <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[14px]">🔍</span>
         </div>
         <select
-          style={{ ...INP, width: '220px' }}
+          className="h-9 px-3 rounded-lg border border-[#E2E8F0] text-[13px] text-[#0F172A] bg-white outline-none w-[200px]"
           value={filterVerified === undefined ? '' : filterVerified.toString()}
           onChange={e => {
             const val = e.target.value;
@@ -323,17 +320,17 @@ export default function CustomersPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', overflow: 'hidden' }}>
+      <div className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
         {loading ? (
-          <div style={{ padding: '4rem', textAlign: 'center', color: '#94A3B8' }}>Loading customer records…</div>
+          <div className="py-16 text-center text-[#94A3B8] text-[13px]">Loading customer records…</div>
         ) : customers.length === 0 ? (
-          <div style={{ padding: '4rem', textAlign: 'center', color: '#94A3B8' }}>No customers match your criteria.</div>
+          <div className="py-16 text-center text-[#94A3B8] text-[13px]">No customers match your criteria.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                 {['Customer', 'Verification', 'Account Status', 'Surge Score', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -341,32 +338,35 @@ export default function CustomersPage() {
               {customers.map(c => (
                 <tr
                   key={c.id}
-                  style={{ borderBottom: '1px solid #F1F5F9', cursor: 'pointer' }}
+                  className="border-b border-[#F1F5F9] cursor-pointer hover:bg-[#F8FAFC] transition-colors"
                   onClick={() => void handleViewDetail(c.id)}
                 >
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <p style={{ fontWeight: 700, color: '#0F172A' }}>{c.full_name}</p>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-[#0F172A]">{c.full_name}</p>
                       {c.role === 'merchant' && (
-                        <span style={{ background: '#EFF6FF', color: '#3B82F6', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Merchant</span>
+                        <span className="bg-[#EFF6FF] text-[#3B82F6] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0">Merchant</span>
                       )}
                     </div>
-                    <p style={{ fontSize: '0.75rem', color: '#64748B' }}>{c.email}</p>
+                    <p className="text-[12px] text-[#64748B]">{c.email}</p>
                   </td>
-                  <td style={{ padding: '1rem' }}><Badge status={c.verification_status} map={VERIFICATION_COLORS} /></td>
-                  <td style={{ padding: '1rem' }}><Badge status={c.account_status} map={ACCOUNT_STATUS_COLORS} /></td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: (c.surge_score ?? 0) >= 400 ? '#16A34A' : (c.surge_score ?? 0) >= 0 ? '#F97316' : '#E11D48' }}>
+                  <td className="px-4 py-3.5"><Badge status={c.verification_status} map={VERIFICATION_COLORS} /></td>
+                  <td className="px-4 py-3.5"><Badge status={c.account_status} map={ACCOUNT_STATUS_COLORS} /></td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-baseline gap-1">
+                      <span
+                        style={{ color: (c.surge_score ?? 0) >= 400 ? '#16A34A' : (c.surge_score ?? 0) >= 0 ? '#F97316' : '#E11D48' }}
+                        className="font-bold text-[15px]"
+                      >
                         {c.surge_score ?? '—'}
                       </span>
-                      <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 600 }}>pts</span>
+                      <span className="text-[11px] text-[#94A3B8] font-semibold">pts</span>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }} onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => void handleViewDetail(c.id)}
-                      style={{ background: '#F1F5F9', color: '#0F172A', border: 'none', borderRadius: '6px', padding: '0.4rem 0.8rem', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}
+                      className="px-3 py-1.5 bg-[#F1F5F9] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#E2E8F0] transition-colors"
                     >
                       View →
                     </button>
@@ -378,10 +378,9 @@ export default function CustomersPage() {
         )}
       </div>
 
-      {/* Loading overlay during detail fetch */}
       {detailLoading && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
-          <div style={{ fontWeight: 700, color: '#0F172A' }}>Loading Profile…</div>
+        <div className="fixed inset-0 bg-white/65 flex items-center justify-center z-[600]">
+          <div className="font-bold text-[#0F172A]">Loading Profile…</div>
         </div>
       )}
     </div>

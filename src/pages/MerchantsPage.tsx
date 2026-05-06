@@ -14,15 +14,11 @@ const OP_COLORS: Record<string, { bg: string; color: string }> = {
   restricted: { bg: '#FFF1F2', color: '#E11D48' },
 };
 
-const F: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '4px' };
-const LBL: React.CSSProperties = { fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' };
-const INP: React.CSSProperties = { padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.875rem', color: '#0F172A', background: '#fff', outline: 'none' };
-
 function Badge({ status, map }: { status: string; map: Record<string, { bg: string; color: string }> }) {
   const safe = status ?? '';
   const s = map[safe] ?? { bg: '#F1F5F9', color: '#64748B' };
   return (
-    <span style={{ background: s.bg, color: s.color, padding: '3px 12px', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'capitalize' }}>
+    <span style={{ background: s.bg, color: s.color }} className="px-3 py-0.5 rounded-full text-[11px] font-bold capitalize">
       {safe.replace(/_/g, ' ')}
     </span>
   );
@@ -30,9 +26,9 @@ function Badge({ status, map }: { status: string; map: Record<string, { bg: stri
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={F}>
-      <span style={LBL}>{label}</span>
-      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>{value ?? '—'}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">{label}</span>
+      <span className="font-semibold text-[14px] text-[#0F172A]">{value ?? '—'}</span>
     </div>
   );
 }
@@ -40,7 +36,10 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 const TIERS = ['Surge Restricted', 'Surge Starter', 'Surge Bronze', 'Surge Silver', 'Surge Gold', 'Surge Elite'];
 const EMPTY = { legal_name: '', display_name: '', business_type: 'retail', country: 'NG', email: '', phone: '', password: '' };
 
-// ── Merchant Detail Page ───────────────────────────────────────────────────────
+const inputCls = 'w-full px-3 py-2 rounded-[8px] border border-[#E2E8F0] text-[14px] text-[#0F172A] bg-white outline-none';
+const labelCls = 'block text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1';
+
+// ── Merchant Detail Page ──────────────────────────────────────────────────────
 function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChange, onUpdate, actionId, tierSaving, notify }: {
   merchant: Merchant;
   onBack: () => void;
@@ -57,48 +56,49 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
 
   return (
     <div>
-      {/* Back nav */}
       <button
         onClick={onBack}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#64748B', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', marginBottom: '1.75rem', padding: 0 }}
+        className="flex items-center gap-1.5 text-[#64748B] text-[14px] font-semibold mb-7 hover:text-[#0F172A] transition-colors"
       >
         ← Back to Merchants
       </button>
 
-      {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '4px', color: '#0F172A' }}>{merchant.display_name}</h1>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>{merchant.legal_name}</p>
+          <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">{merchant.display_name}</h1>
+          <p className="text-[14px] text-[#64748B]">{merchant.legal_name}</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 items-center flex-wrap">
           <Badge status={merchant.onboarding_status} map={STATUS_COLORS} />
           <Badge status={merchant.operating_status} map={OP_COLORS} />
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-
+      <div className="grid grid-cols-2 gap-5">
         {/* Business Info */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Business Information</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Business Information</p>
+          </div>
+          <div className="p-5 grid grid-cols-2 gap-5">
             <DetailRow label="Display Name" value={merchant.display_name} />
             <DetailRow label="Legal Name" value={merchant.legal_name} />
-            <DetailRow label="Business Type" value={<span style={{ textTransform: 'capitalize' }}>{merchant.business_type}</span>} />
+            <DetailRow label="Business Type" value={<span className="capitalize">{merchant.business_type}</span>} />
             <DetailRow label="Country" value={merchant.country} />
             <DetailRow label="Joined" value={merchant.created_at ? new Date(merchant.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'} />
-            <div style={F}>
-              <span style={LBL}>Merchant ID</span>
-              <code style={{ fontSize: '0.68rem', background: '#F1F5F9', padding: '3px 7px', borderRadius: '5px', color: '#475569', wordBreak: 'break-all' }}>{merchant.id}</code>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Merchant ID</span>
+              <code className="text-[11px] bg-[#F1F5F9] px-1.5 py-0.5 rounded-md text-[#475569] break-all">{merchant.id}</code>
             </div>
           </div>
         </section>
 
         {/* Surge Settings */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Surge Settings</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Surge Settings</p>
+          </div>
+          <div className="p-5 grid grid-cols-2 gap-5">
             <DetailRow label="Min Accepted Tier" value={currentTier} />
             <DetailRow label="Default Deposit" value={(fs as any).default_deposit_percent != null ? `${(fs as any).default_deposit_percent}%` : '—'} />
             <DetailRow label="Max Installments" value={(fs as any).max_installment_count ?? '—'} />
@@ -106,21 +106,23 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
             <DetailRow label="Allowed Schedules" value={(fs as any).allowed_schedule_types?.join(', ') ?? '—'} />
             <DetailRow label="Risk Bearer" value={(fs as any).risk_bearer?.replace(/_/g, ' ') ?? '—'} />
             {(fs as any).webhook_url && (
-              <div style={{ ...F, gridColumn: '1 / -1' }}>
-                <span style={LBL}>Webhook URL</span>
-                <code style={{ fontSize: '0.72rem', wordBreak: 'break-all', color: '#475569' }}>{(fs as any).webhook_url}</code>
+              <div className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Webhook URL</span>
+                <code className="text-[12px] break-all text-[#475569]">{(fs as any).webhook_url}</code>
               </div>
             )}
           </div>
         </section>
 
         {/* Customer Gate */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Customer Gate</p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Customer Gate</p>
+          </div>
+          <div className="p-5 flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0F172A', marginBottom: '3px' }}>Minimum Accepted Tier</p>
-              <p style={{ fontSize: '0.78rem', color: '#64748B' }}>Customers below this tier cannot start a Surge plan with this merchant.</p>
+              <p className="text-[13px] font-bold text-[#0F172A] mb-1">Minimum Accepted Tier</p>
+              <p className="text-[12px] text-[#64748B]">Customers below this tier cannot start a Surge plan with this merchant.</p>
             </div>
             <select
               disabled={tierSaving === merchant.id}
@@ -130,7 +132,7 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
                 await onTierChange(merchant.id, tier);
                 onUpdate({ ...merchant, flex_settings: { ...(merchant.flex_settings ?? {}), min_accepted_tier: tier } });
               }}
-              style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0F172A', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '0.45rem 0.875rem', background: '#fff', opacity: tierSaving === merchant.id ? 0.5 : 1, cursor: 'pointer' }}
+              className="h-9 px-3 rounded-lg border border-[#E2E8F0] text-[13px] font-bold text-[#0F172A] bg-white outline-none cursor-pointer disabled:opacity-50 shrink-0"
             >
               {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -138,45 +140,47 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
         </section>
 
         {/* Actions */}
-        <section style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem' }}>
-          <p style={{ ...LBL, marginBottom: '1.25rem' }}>Actions</p>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {merchant.onboarding_status !== 'approved' && (
-              <button
-                disabled={!!actionId}
-                onClick={async () => {
-                  await onApprove(merchant.id);
-                  onUpdate({ ...merchant, onboarding_status: 'approved' });
-                }}
-                style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionId ? 0.6 : 1, boxShadow: '0 2px 8px rgba(22,163,74,0.2)' }}
-              >
-                {actionId === merchant.id ? 'Processing…' : '✓ Approve Merchant'}
-              </button>
-            )}
+        <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
+            <p className="text-[13px] font-bold text-[#0F172A]">Actions</p>
+          </div>
+          <div className="p-5">
+            <div className="flex gap-3 flex-wrap mb-3">
+              {merchant.onboarding_status !== 'approved' && (
+                <button
+                  disabled={!!actionId}
+                  onClick={async () => {
+                    await onApprove(merchant.id);
+                    onUpdate({ ...merchant, onboarding_status: 'approved' });
+                  }}
+                  className="px-5 py-2 bg-[#16A34A] text-white rounded-xl text-[13px] font-bold disabled:opacity-60 shadow-sm shadow-green-200"
+                >
+                  {actionId === merchant.id ? 'Processing…' : '✓ Approve Merchant'}
+                </button>
+              )}
+              {merchant.onboarding_status === 'approved' && (
+                <div className="flex items-center gap-2 bg-[#F0FDF4] border border-[#86EFAC] rounded-xl px-4 py-2">
+                  <span className="text-[#16A34A] font-bold text-[13px]">✓ Approved</span>
+                </div>
+              )}
+              {merchant.onboarding_status !== 'rejected' && (
+                <button
+                  disabled={!!actionId}
+                  onClick={async () => {
+                    if (!confirm('Reject this merchant?')) return;
+                    await onReject(merchant.id);
+                    onUpdate({ ...merchant, onboarding_status: 'rejected' });
+                  }}
+                  className="px-4 py-2 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-xl text-[13px] font-bold disabled:opacity-60"
+                >
+                  {actionId === merchant.id ? 'Processing…' : 'Reject'}
+                </button>
+              )}
+            </div>
             {merchant.onboarding_status === 'approved' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', padding: '0.6rem 1rem' }}>
-                <span style={{ color: '#16A34A', fontWeight: 700, fontSize: '0.875rem' }}>✓ Approved</span>
-              </div>
-            )}
-            {merchant.onboarding_status !== 'rejected' && (
-              <button
-                disabled={!!actionId}
-                onClick={async () => {
-                  if (!confirm('Reject this merchant?')) return;
-                  await onReject(merchant.id);
-                  onUpdate({ ...merchant, onboarding_status: 'rejected' });
-                }}
-                style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '8px', padding: '0.6rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', opacity: actionId ? 0.6 : 1 }}
-              >
-                {actionId === merchant.id ? 'Processing…' : 'Reject'}
-              </button>
+              <p className="text-[12px] text-[#94A3B8]">This merchant is live and can accept Surge payment plans.</p>
             )}
           </div>
-          {merchant.onboarding_status === 'approved' && (
-            <p style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#94A3B8' }}>
-              This merchant is live and can accept Surge payment plans.
-            </p>
-          )}
         </section>
       </div>
     </div>
@@ -269,12 +273,11 @@ export default function MerchantsPage() {
     setForm(p => ({ ...p, [k]: e.target.value }));
 
   const Toast = () => toast ? (
-    <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 100, background: toast.ok ? '#0F172A' : '#DC2626', color: '#fff', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, fontSize: '0.875rem', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', maxWidth: '340px' }}>
+    <div className={`fixed top-4 right-4 z-[100] px-5 py-3 rounded-xl text-white text-[13px] font-semibold shadow-xl max-w-xs ${toast.ok ? 'bg-[#0F172A]' : 'bg-red-600'}`}>
       {toast.msg}
     </div>
   ) : null;
 
-  // ── Detail Page ──
   if (selectedMerchant) {
     return (
       <>
@@ -294,29 +297,32 @@ export default function MerchantsPage() {
     );
   }
 
-  // ── List Page ──
   return (
     <div>
       <Toast />
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px' }}>Merchants</h1>
-          <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Register and manage merchant accounts.</p>
+          <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">Merchants</h1>
+          <p className="text-[13px] text-[#64748B]">Register and manage merchant accounts.</p>
         </div>
-        <button onClick={() => { setShowForm(v => !v); setLastCreated(null); }} style={{ background: '#0F172A', color: '#fff', border: 'none', borderRadius: '10px', padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+        <button
+          onClick={() => { setShowForm(v => !v); setLastCreated(null); }}
+          className="px-5 py-2.5 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl text-[13px] font-bold transition-colors"
+        >
           {showForm ? 'Cancel' : '+ Add Merchant'}
         </button>
       </div>
 
       {/* Success banner */}
       {lastCreated && (
-        <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
-          <p style={{ fontWeight: 700, color: '#15803D', marginBottom: '6px' }}>Merchant created</p>
-          <p style={{ fontSize: '0.8rem', color: '#166534', lineHeight: 1.7 }}>
+        <div className="bg-[#F0FDF4] border border-[#86EFAC] rounded-2xl p-4 mb-5">
+          <p className="font-bold text-[#15803D] mb-1.5 text-[13px]">Merchant created</p>
+          <p className="text-[12px] text-[#166534] leading-relaxed">
             <strong>Login email:</strong> {lastCreated.email}<br />
-            <strong>Merchant ID:</strong> <code style={{ background: '#DCFCE7', padding: '1px 6px', borderRadius: '4px' }}>{lastCreated.merchantId}</code><br />
+            <strong>Merchant ID:</strong>{' '}
+            <code className="bg-[#DCFCE7] px-1.5 py-0.5 rounded text-[11px]">{lastCreated.merchantId}</code><br />
             The merchant can now log in at the Merchant Dashboard using their email and password.
           </p>
         </div>
@@ -324,39 +330,39 @@ export default function MerchantsPage() {
 
       {/* Registration form */}
       {showForm && (
-        <form onSubmit={handleOnboard} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem' }}>New Merchant</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={F}><label style={LBL}>Legal Name *</label><input style={INP} required value={form.legal_name} onChange={set('legal_name')} placeholder="Acme Ltd." /></div>
-            <div style={F}><label style={LBL}>Display Name *</label><input style={INP} required value={form.display_name} onChange={set('display_name')} placeholder="Acme Store" /></div>
-            <div style={F}>
-              <label style={LBL}>Business Type *</label>
-              <select style={{ ...INP }} value={form.business_type} onChange={set('business_type')}>
+        <form onSubmit={handleOnboard} className="bg-white rounded-2xl border border-[#E8ECF0] p-5 mb-5">
+          <p className="text-[13px] font-bold text-[#0F172A] mb-4">New Merchant</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div><label className={labelCls}>Legal Name *</label><input className={inputCls} required value={form.legal_name} onChange={set('legal_name')} placeholder="Acme Ltd." /></div>
+            <div><label className={labelCls}>Display Name *</label><input className={inputCls} required value={form.display_name} onChange={set('display_name')} placeholder="Acme Store" /></div>
+            <div>
+              <label className={labelCls}>Business Type *</label>
+              <select className={inputCls} value={form.business_type} onChange={set('business_type')}>
                 {['retail','ecommerce','services','fmcg','electronics','fashion','pharmacy','travel'].map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                 ))}
               </select>
             </div>
-            <div style={F}>
-              <label style={LBL}>Country *</label>
-              <select style={{ ...INP }} value={form.country} onChange={set('country')}>
+            <div>
+              <label className={labelCls}>Country *</label>
+              <select className={inputCls} value={form.country} onChange={set('country')}>
                 <option value="NG">Nigeria</option>
                 <option value="GH">Ghana</option>
                 <option value="KE">Kenya</option>
               </select>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '1rem', marginBottom: '1rem' }}>
-            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Login Credentials</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div style={F}><label style={LBL}>Email *</label><input style={INP} required type="email" value={form.email} onChange={set('email')} placeholder="merchant@example.com" /></div>
-              <div style={F}><label style={LBL}>Phone *</label><input style={INP} required value={form.phone} onChange={set('phone')} placeholder="08012345678" /></div>
-              <div style={{ ...F, gridColumn: '1 / -1' }}><label style={LBL}>Password *</label><input style={INP} required type="password" value={form.password} onChange={set('password')} placeholder="Minimum 8 characters" minLength={8} /></div>
+          <div className="border-t border-[#F1F5F9] pt-4 mb-4">
+            <p className="text-[11px] font-bold text-[#64748B] mb-3 uppercase tracking-wider">Login Credentials</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className={labelCls}>Email *</label><input className={inputCls} required type="email" value={form.email} onChange={set('email')} placeholder="merchant@example.com" /></div>
+              <div><label className={labelCls}>Phone *</label><input className={inputCls} required value={form.phone} onChange={set('phone')} placeholder="08012345678" /></div>
+              <div className="col-span-2"><label className={labelCls}>Password *</label><input className={inputCls} required type="password" value={form.password} onChange={set('password')} placeholder="Minimum 8 characters" minLength={8} /></div>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button type="button" onClick={() => setShowForm(false)} style={{ background: '#F1F5F9', color: '#64748B', border: 'none', borderRadius: '8px', padding: '0.6rem 1.2rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={submitting} style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.5rem', fontWeight: 700, fontSize: '0.875rem', opacity: submitting ? 0.6 : 1, cursor: 'pointer' }}>
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-[#F1F5F9] text-[#64748B] rounded-xl text-[13px] font-semibold">Cancel</button>
+            <button type="submit" disabled={submitting} className="px-5 py-2 bg-[#16A34A] text-white rounded-xl text-[13px] font-bold disabled:opacity-60">
               {submitting ? 'Creating…' : 'Create Merchant'}
             </button>
           </div>
@@ -364,26 +370,30 @@ export default function MerchantsPage() {
       )}
 
       {/* Filters */}
-      <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        {['', 'pending', 'approved', 'rejected'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{ background: filter === s ? '#0F172A' : '#F1F5F9', color: filter === s ? '#fff' : '#64748B', border: 'none', borderRadius: '8px', padding: '0.4rem 1rem', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {(['', 'pending', 'approved', 'rejected'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
+            className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${filter === s ? 'bg-[#0F172A] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}
+          >
             {s === '' ? 'All' : s === 'pending' ? 'Approvals' : s.charAt(0).toUpperCase() + s.slice(1)}
           </button>
         ))}
       </div>
 
       {/* Table */}
-      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '14px', overflow: 'hidden' }}>
+      <div className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>Loading…</div>
+          <div className="py-12 text-center text-[#94A3B8] text-[13px]">Loading…</div>
         ) : merchants.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>No merchants found.</div>
+          <div className="py-12 text-center text-[#94A3B8] text-[13px]">No merchants found.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                 {['Business', 'Type', 'Onboarding', 'Operating', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -391,31 +401,39 @@ export default function MerchantsPage() {
               {merchants.map(m => (
                 <tr
                   key={m.id}
-                  style={{ borderBottom: '1px solid #F1F5F9', cursor: 'pointer' }}
+                  className="border-b border-[#F1F5F9] cursor-pointer hover:bg-[#F8FAFC] transition-colors"
                   onClick={() => setSelectedMerchant(m)}
                 >
-                  <td style={{ padding: '0.875rem 1rem' }}>
-                    <p style={{ fontWeight: 700 }}>{m.display_name}</p>
-                    <p style={{ color: '#94A3B8', fontSize: '0.75rem' }}>{m.legal_name}</p>
+                  <td className="px-4 py-3.5">
+                    <p className="font-bold text-[#0F172A]">{m.display_name}</p>
+                    <p className="text-[12px] text-[#94A3B8]">{m.legal_name}</p>
                   </td>
-                  <td style={{ padding: '0.875rem 1rem', color: '#64748B', textTransform: 'capitalize' }}>{m.business_type}</td>
-                  <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.onboarding_status} map={STATUS_COLORS} /></td>
-                  <td style={{ padding: '0.875rem 1rem' }}><Badge status={m.operating_status} map={OP_COLORS} /></td>
-                  <td style={{ padding: '0.875rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-3.5 text-[#64748B] capitalize">{m.business_type}</td>
+                  <td className="px-4 py-3.5"><Badge status={m.onboarding_status} map={STATUS_COLORS} /></td>
+                  <td className="px-4 py-3.5"><Badge status={m.operating_status} map={OP_COLORS} /></td>
+                  <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-2 items-center">
                       <button
                         onClick={() => setSelectedMerchant(m)}
-                        style={{ background: '#F1F5F9', color: '#0F172A', border: 'none', borderRadius: '6px', padding: '0.35rem 0.85rem', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}
+                        className="px-3 py-1.5 bg-[#F1F5F9] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#E2E8F0] transition-colors"
                       >
                         View →
                       </button>
                       {m.onboarding_status !== 'approved' && (
-                        <button disabled={actionId === m.id} onClick={() => handleApprove(m.id)} style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.35rem 0.85rem', fontWeight: 600, fontSize: '0.78rem', opacity: actionId === m.id ? 0.6 : 1, cursor: 'pointer' }}>
+                        <button
+                          disabled={actionId === m.id}
+                          onClick={() => handleApprove(m.id)}
+                          className="px-3 py-1.5 bg-[#16A34A] text-white rounded-lg text-[12px] font-semibold disabled:opacity-60"
+                        >
                           Approve
                         </button>
                       )}
                       {m.onboarding_status !== 'rejected' && (
-                        <button disabled={actionId === m.id} onClick={() => { if (confirm('Reject this merchant?')) handleReject(m.id); }} style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '6px', padding: '0.35rem 0.85rem', fontWeight: 600, fontSize: '0.78rem', opacity: actionId === m.id ? 0.6 : 1, cursor: 'pointer' }}>
+                        <button
+                          disabled={actionId === m.id}
+                          onClick={() => { if (confirm('Reject this merchant?')) handleReject(m.id); }}
+                          className="px-3 py-1.5 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-lg text-[12px] font-semibold disabled:opacity-60"
+                        >
                           Reject
                         </button>
                       )}
@@ -427,7 +445,7 @@ export default function MerchantsPage() {
           </table>
         )}
       </div>
-      <p style={{ marginTop: '0.75rem', color: '#94A3B8', fontSize: '0.78rem' }}>{merchants.length} merchant{merchants.length !== 1 ? 's' : ''}</p>
+      <p className="mt-3 text-[#94A3B8] text-[12px]">{merchants.length} merchant{merchants.length !== 1 ? 's' : ''}</p>
     </div>
   );
 }
