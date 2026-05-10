@@ -15,12 +15,20 @@ Work through these in order — check off each feature as it ships.
 - [x] **Merchant Detail Page** — wallet balance (available/pending/lifetime), payment plans table, settlement entries, business info, Surge settings, tier gate, approve/reject
 - [x] **Webhook Event Monitor** — all events table with type/status/latency, event type filter, replay button per event; Dead Letter Queue tab showing permanently failed attempts with replay
 - [x] **Customer Detail — Risk & Payments** — Surge Score history table, Force Refresh button, linked payment methods (card/bank with active/default status), full transaction history
+- [x] **Scheduling & Auto-Debit Control** — active jobs table, Trigger Now, Cancel Job, slide-out drawer with full payment attempt history per plan
+- [x] **Settlement Ledger** — all entries with type badges (merchant payout vs platform fee), summary stats cards, search + merchant ID filter
 
 ---
 
 ## In Progress / Up Next
 
-### 4. Scheduling & Auto-Debit Control
+## All features complete ✅
+
+The original roadmap is fully shipped. Future enhancements to consider:
+- Bulk actions (bulk suspend customers, bulk approve merchants)
+- Export to CSV (transactions, settlement entries)
+- Date range filtering on settlement and transactions
+- Real-time alerts (websocket or polling for new delinquency cases)
 **Goal:** Full visibility into outbound webhook delivery so admins can debug failed orders.
 
 - [ ] List all outbound events with status (delivered/failed), latency, merchant (`GET /api/v1/webhooks/events`)

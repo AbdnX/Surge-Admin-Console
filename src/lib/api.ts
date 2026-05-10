@@ -80,6 +80,33 @@ export interface Transaction {
   createdAt?: string;
 }
 
+export interface ScheduledJob {
+  job_id: string;
+  next_run_time: string | null;
+  args: unknown[];
+}
+
+export interface PaymentAttempt {
+  id: string;
+  transaction_id: string;
+  amount?: number;
+  currency?: string;
+  status: string;
+  gateway_response?: string;
+  attempted_at: string;
+  json?: Record<string, unknown>;
+}
+
+export interface SettlementEntry {
+  id: string;
+  merchant_id: string;
+  amount: number;
+  currency?: string;
+  type?: string;
+  created_at: string;
+  json?: Record<string, unknown>;
+}
+
 export interface ScoreSnapshot {
   score: number;
   tier: string;
@@ -219,6 +246,27 @@ export const api = {
       req<{ data: DelinquencyCase[]; total: number }>('GET', '/delinquency/cases'),
     sweep: (asOf: string) =>
       req<unknown>('POST', `/delinquency/sweep?as_of_date=${asOf}`),
+  },
+  scheduling: {
+    jobs: (planId?: string) => {
+      const url = planId ? `/scheduling/jobs?plan_id=${planId}` : '/scheduling/jobs';
+      return req<{ data: ScheduledJob[]; total: number }>('GET', url);
+    },
+    cancel: (jobId: string) =>
+      fetch(`${BASE}/scheduling/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('flex_admin_token') ?? ''}` },
+      }).then(r => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
+    trigger: (jobId: string) =>
+      req<{ job_id: string; triggered: boolean }>('POST', `/scheduling/jobs/${jobId}/trigger`),
+    attempts: (planId: string) =>
+      req<{ transaction_id: string; data: PaymentAttempt[]; total: number }>('GET', `/payments/attempts/${planId}`),
+  },
+  settlement: {
+    list: (merchantId?: string) => {
+      const url = merchantId ? `/settlement/entries?merchant_id=${merchantId}` : '/settlement/entries';
+      return req<{ data: SettlementEntry[]; total: number }>('GET', url);
+    },
   },
   webhooks: {
     events: (page = 1, limit = 50) =>
