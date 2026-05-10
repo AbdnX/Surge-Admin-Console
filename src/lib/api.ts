@@ -80,6 +80,29 @@ export interface Transaction {
   createdAt?: string;
 }
 
+export interface ScoreSnapshot {
+  score: number;
+  tier: string;
+  onboarding_completed: boolean;
+  factors?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  customer_id: string;
+  type: string;           // 'card' | 'bank_account'
+  is_default: boolean;
+  is_active: boolean;
+  last_four?: string;
+  bank_name?: string;
+  account_name?: string;
+  card_type?: string;
+  expiry_month?: string;
+  expiry_year?: string;
+  created_at: string;
+}
+
 export interface WebhookEvent {
   id: string;
   merchant_id: string;
@@ -157,6 +180,22 @@ export const api = {
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/approve-verification`),
     rejectVerification: (id: string) =>
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/reject-verification`),
+  },
+  risk: {
+    score: (customerId: string) =>
+      req<{ ok: boolean; data: { score: number; tier: string; onboarding_completed: boolean; factors?: Record<string, unknown> } }>('GET', `/risk/score/${customerId}`),
+    history: (customerId: string, limit = 12) =>
+      req<{ ok: boolean; data: { customer_id: string; data: ScoreSnapshot[] } }>('GET', `/risk/history/${customerId}?limit=${limit}`),
+    refresh: (customerId: string) =>
+      req<{ ok: boolean; data: { score: number; tier: string } }>('POST', `/risk/score/${customerId}/refresh`),
+  },
+  paymentMethods: {
+    list: (customerId: string) =>
+      req<{ ok: boolean; data: PaymentMethod[]; total: number }>('GET', `/payment-methods/customers/${customerId}`),
+  },
+  customerTransactions: {
+    list: (userId: string) =>
+      req<{ ok: boolean; data: Transaction[] }>('GET', `/transactions/user/${userId}`),
   },
   merchantDetail: {
     wallet: (merchantId: string) =>

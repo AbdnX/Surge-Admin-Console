@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { api, type Customer } from '../lib/api';
+import { RefreshCw } from 'lucide-react';
+import { api, type Customer, type ScoreSnapshot, type PaymentMethod, type Transaction } from '../lib/api';
 
 const ACCOUNT_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   active:     { bg: '#F0FDF4', color: '#16A34A' },
@@ -35,6 +36,23 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 // ── Customer Detail Page ──────────────────────────────────────────────────────
+const TX_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  active:     { bg: '#EFF6FF', color: '#3B82F6' },
+  completed:  { bg: '#F0FDF4', color: '#16A34A' },
+  delinquent: { bg: '#FFF1F2', color: '#E11D48' },
+  cancelled:  { bg: '#F1F5F9', color: '#64748B' },
+  pending:    { bg: '#FFFBEB', color: '#D97706' },
+};
+
+function TxBadge({ status }: { status: string }) {
+  const s = TX_STATUS_COLORS[status] ?? { bg: '#F1F5F9', color: '#64748B' };
+  return (
+    <span style={{ background: s.bg, color: s.color }} className="px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize">
+      {status}
+    </span>
+  );
+}
+
 function CustomerDetailPage({ customer: initial, onBack, notify }: {
   customer: Customer;
   onBack: () => void;
@@ -42,6 +60,46 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
 }) {
   const [customer, setCustomer] = useState(initial);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Financial / risk data
+  const [scoreHistory, setScoreHistory] = useState<ScoreSnapshot[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [financialsLoading, setFinancialsLoading] = useState(true);
+  const [refreshingScore, setRefreshingScore] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setFinancialsLoading(true);
+      const [histRes, pmRes, txRes] = await Promise.allSettled([
+        api.risk.history(customer.id),
+        api.paymentMethods.list(customer.id),
+        api.customerTransactions.list(customer.id),
+      ]);
+      if (histRes.status === 'fulfilled') setScoreHistory(histRes.value.data?.data ?? []);
+      if (pmRes.status === 'fulfilled') setPaymentMethods(pmRes.value.data ?? []);
+      if (txRes.status === 'fulfilled') setTransactions(txRes.value.data ?? []);
+      setFinancialsLoading(false);
+    };
+    void load();
+  }, [customer.id]);
+
+  const handleRefreshScore = async () => {
+    setRefreshingScore(true);
+    try {
+      const res = await api.risk.refresh(customer.id);
+      if (res.ok) {
+        notify(`Score refreshed — new score: ${res.data.score} (${res.data.tier})`);
+        setCustomer(c => ({ ...c, surge_score: res.data.score }));
+        // Reload history
+        const histRes = await api.risk.history(customer.id);
+        setScoreHistory(histRes.data?.data ?? []);
+      } else {
+        notify('Failed to refresh score', false);
+      }
+    } catch { notify('Error refreshing score', false); }
+    finally { setRefreshingScore(false); }
+  };
 
   const handleApproveVerification = async () => {
     setActionLoading(true);
@@ -88,7 +146,7 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
   };
 
   const score = customer.surge_score ?? 0;
-  const scoreColor = score >= 400 ? '#00d66f' : score >= 0 ? '#F97316' : '#E11D48';
+  const scoreColor = score >= 700 ? '#00d66f' : score >= 400 ? '#F97316' : '#E11D48';
 
   return (
     <div>
@@ -214,6 +272,169 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
           </div>
         </section>
       </div>
+
+      {/* ── Score History ── */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden mt-5">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Surge Score History</p>
+          <button
+            disabled={refreshingScore}
+            onClick={() => void handleRefreshScore()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F1F5F9] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={refreshingScore ? 'animate-spin' : ''} />
+            {refreshingScore ? 'Recalculating…' : 'Force Refresh'}
+          </button>
+        </div>
+        {financialsLoading ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+        ) : scoreHistory.length === 0 ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">No score history available.</div>
+        ) : (
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                {['Score', 'Tier', 'Verified', 'Date'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {scoreHistory.map((snap, i) => {
+                const c = snap.score >= 700 ? '#00d66f' : snap.score >= 400 ? '#F97316' : '#E11D48';
+                return (
+                  <tr key={i} className="border-b border-[#F1F5F9] last:border-0">
+                    <td className="px-4 py-3">
+                      <span style={{ color: c }} className="font-black text-[16px]">{snap.score}</span>
+                      <span className="text-[11px] text-[#94A3B8] ml-1">pts</span>
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-[#0F172A]">{snap.tier ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      {snap.onboarding_completed
+                        ? <span className="text-[#16A34A] font-bold text-[11px]">✓ Verified</span>
+                        : <span className="text-[#94A3B8] text-[11px]">Not verified</span>}
+                    </td>
+                    <td className="px-4 py-3 text-[#64748B] text-[12px]">
+                      {snap.created_at ? new Date(snap.created_at).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* ── Payment Methods ── */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden mt-5">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Payment Methods</p>
+          {!financialsLoading && (
+            <span className="text-[11px] font-bold text-[#94A3B8] bg-[#F1F5F9] px-2.5 py-1 rounded-full">
+              {paymentMethods.length} linked
+            </span>
+          )}
+        </div>
+        {financialsLoading ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+        ) : paymentMethods.length === 0 ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">No payment methods linked.</div>
+        ) : (
+          <div className="p-5 flex flex-col gap-3">
+            {paymentMethods.map(pm => {
+              const isCard = pm.type === 'card';
+              const label = isCard
+                ? `${pm.card_type ?? 'Card'} •••• ${pm.last_four ?? '????'}`
+                : `${pm.bank_name ?? 'Bank'} — ${pm.account_name ?? '—'}`;
+              const sub = isCard
+                ? `Expires ${pm.expiry_month ?? '??'}/${pm.expiry_year ?? '??'}`
+                : pm.last_four ? `Acct: •••• ${pm.last_four}` : '';
+
+              return (
+                <div key={pm.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${pm.is_default ? 'border-[#00d66f] bg-[#F0FDF4]' : 'border-[#E8ECF0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold ${isCard ? 'bg-[#EFF6FF] text-[#3B82F6]' : 'bg-[#FFF7ED] text-[#F97316]'}`}>
+                      {isCard ? '💳' : '🏦'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-[13px] text-[#0F172A]">{label}</p>
+                      {sub && <p className="text-[11px] text-[#64748B]">{sub}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {pm.is_default && (
+                      <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">Default</span>
+                    )}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pm.is_active ? 'bg-[#F0FDF4] text-[#16A34A]' : 'bg-[#FFF1F2] text-[#E11D48]'}`}>
+                      {pm.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── Transaction History ── */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden mt-5">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Transaction History</p>
+          {!financialsLoading && (
+            <span className="text-[11px] font-bold text-[#94A3B8] bg-[#F1F5F9] px-2.5 py-1 rounded-full">
+              {transactions.length} plans
+            </span>
+          )}
+        </div>
+        {financialsLoading ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+        ) : transactions.length === 0 ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">No transactions yet.</div>
+        ) : (
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                {['Plan', 'Amount', 'Progress', 'Status', 'Date'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map(tx => {
+                const total = tx.totalAmountDue?.amount ?? tx.principalAmount?.amount ?? 0;
+                const paid = tx.amountPaid?.amount ?? 0;
+                const insts = tx.installments ?? [];
+                const paidCount = insts.filter(i => i.status === 'paid').length;
+                const pct = insts.length > 0 ? Math.round((paidCount / insts.length) * 100) : 0;
+                return (
+                  <tr key={tx.id} className="border-b border-[#F1F5F9] last:border-0">
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-[#0F172A] truncate max-w-[160px]">{tx.title ?? 'Payment Plan'}</p>
+                      <code className="text-[10px] text-[#94A3B8]">{tx.id.slice(0, 12)}…</code>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-[#0F172A]">₦{total.toLocaleString('en-NG')}</p>
+                      <p className="text-[11px] text-[#16A34A]">₦{paid.toLocaleString('en-NG')} paid</p>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00d66f] rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[11px] text-[#64748B] font-semibold">{paidCount}/{insts.length}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5"><TxBadge status={tx.status} /></td>
+                    <td className="px-4 py-3.5 text-[#64748B] text-[12px]">
+                      {tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }
