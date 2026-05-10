@@ -1,11 +1,12 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight } from 'lucide-react';
+import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight, LayoutDashboard } from 'lucide-react';
 import { api } from './lib/api';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
 import DelinquencyPage from './pages/DelinquencyPage';
 import TransactionsPage from './pages/TransactionsPage';
+import OverviewPage from './pages/OverviewPage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -32,13 +33,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 const AUTH_KEY = 'flex_admin_authed';
-type Tab = 'merchants' | 'customers' | 'delinquency' | 'transactions';
+type Tab = 'overview' | 'merchants' | 'customers' | 'delinquency' | 'transactions';
 
 const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: 'merchants',    label: 'Merchants',    icon: Building2,      desc: 'Manage merchant accounts' },
-  { id: 'customers',    label: 'Customers',    icon: Users,          desc: 'View consumer profiles'   },
-  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight, desc: 'All payment plans'        },
-  { id: 'delinquency',  label: 'Delinquency',  icon: AlertTriangle,  desc: 'Monitor overdue cases'    },
+  { id: 'overview',     label: 'Overview',     icon: LayoutDashboard, desc: 'Platform snapshot'        },
+  { id: 'merchants',    label: 'Merchants',    icon: Building2,       desc: 'Manage merchant accounts' },
+  { id: 'customers',    label: 'Customers',    icon: Users,           desc: 'View consumer profiles'   },
+  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  desc: 'All payment plans'        },
+  { id: 'delinquency',  label: 'Delinquency',  icon: AlertTriangle,   desc: 'Monitor overdue cases'    },
 ];
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
@@ -84,7 +86,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
             Platform<br />Control Centre
           </p>
           <p className="text-[14px] text-white/40 leading-relaxed">
-            Manage merchants, monitor customer accounts, and oversee delinquency cases from one place.
+            Monitor platform health, manage merchants and customers, and oversee all payment activity from one place.
           </p>
         </div>
 
@@ -150,7 +152,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
 
 export default function App() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === '1');
-  const [tab, setTab] = useState<Tab>('merchants');
+  const [tab, setTab] = useState<Tab>('overview');
 
   if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />;
 
@@ -225,6 +227,7 @@ export default function App() {
 
           {/* Page content */}
           <main className="flex-1 p-7 overflow-y-auto">
+            {tab === 'overview'     && <OverviewPage onNavigate={setTab} />}
             {tab === 'merchants'    && <MerchantsPage />}
             {tab === 'customers'    && <CustomersPage />}
             {tab === 'transactions' && <TransactionsPage />}

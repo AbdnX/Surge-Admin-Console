@@ -11,24 +11,13 @@ Work through these in order — check off each feature as it ships.
 - [x] **Customers** — list, view detail, suspend, approve/reject BVN/NIN verification
 - [x] **Delinquency** — list cases, run sweep
 - [x] **Transactions** — list all payment plans, filter by status, view installment schedule detail
+- [x] **Platform Overview Dashboard** — stat cards (transactions, customers, delinquency, pending merchants), alert strip, recent transactions table, click-through nav to each section
 
 ---
 
 ## In Progress / Up Next
 
-### 1. Platform Overview Dashboard
-**Goal:** Give the admin a birds-eye view the moment they log in.
-
-- [ ] Total active plans, total volume processed, delinquency rate
-- [ ] New customers this week, pending merchant approvals count
-- [ ] Alert strip if any webhook deliveries have failed recently
-- [ ] Quick-action links to problem areas (e.g. "3 pending approvals")
-
-**APIs needed:** `GET /api/v1/admin/merchants/pending`, `GET /api/v1/delinquency/cases`, `GET /api/v1/webhooks/failed-attempts`, `GET /api/v1/transactions/`
-
----
-
-### 2. Merchant Detail Page
+### 1. Merchant Detail Page
 **Goal:** Full merchant profile — financials, activity, config — in one place.
 
 - [ ] Wallet balance (`GET /api/v1/merchant/{id}/wallet`)
