@@ -136,6 +136,14 @@ export const api = {
     rejectVerification: (id: string) =>
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/reject-verification`),
   },
+  merchantDetail: {
+    wallet: (merchantId: string) =>
+      req<{ available_balance: number; pending_balance: number; currency: string; total_earned?: number }>('GET', `/merchant/${merchantId}/wallet`),
+    transactions: (merchantId: string) =>
+      req<{ ok: boolean; data: Transaction[] }>('GET', `/transactions/merchant/${merchantId}`),
+    settlement: (merchantId: string) =>
+      req<{ data: Array<{ id: string; merchant_id: string; amount: number; currency: string; type: string; created_at: string; json?: any }>; total: number }>('GET', `/settlement/entries?merchant_id=${merchantId}`),
+  },
   transactions: {
     list: (page = 1, limit = 50, status?: string) => {
       let url = `/transactions/?page=${page}&limit=${limit}`;

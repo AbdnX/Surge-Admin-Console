@@ -1,5 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { api, type Merchant } from '../lib/api';
+import { api, type Merchant, type Transaction } from '../lib/api';
+
+const TX_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  active:     { bg: '#EFF6FF', color: '#3B82F6' },
+  completed:  { bg: '#F0FDF4', color: '#16A34A' },
+  delinquent: { bg: '#FFF1F2', color: '#E11D48' },
+  cancelled:  { bg: '#F1F5F9', color: '#64748B' },
+  pending:    { bg: '#FFFBEB', color: '#D97706' },
+};
+
+function TxBadge({ status }: { status: string }) {
+  const s = TX_STATUS_COLORS[status] ?? { bg: '#F1F5F9', color: '#64748B' };
+  return (
+    <span style={{ background: s.bg, color: s.color }} className="px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize">
+      {status}
+    </span>
+  );
+}
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   draft:        { bg: '#F1F5F9', color: '#64748B' },
@@ -54,6 +71,29 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
   const fs = merchant.flex_settings ?? {};
   const currentTier = (fs as any).min_accepted_tier ?? 'Surge Bronze';
 
+  const [wallet, setWallet] = useState<{ available_balance: number; pending_balance: number; currency: string; total_earned?: number } | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [settlement, setSettlement] = useState<any[]>([]);
+  const [financialsLoading, setFinancialsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFinancials = async () => {
+      setFinancialsLoading(true);
+      const [walletRes, txRes, settlementRes] = await Promise.allSettled([
+        api.merchantDetail.wallet(merchant.id),
+        api.merchantDetail.transactions(merchant.id),
+        api.merchantDetail.settlement(merchant.id),
+      ]);
+      if (walletRes.status === 'fulfilled') setWallet(walletRes.value);
+      if (txRes.status === 'fulfilled') setTransactions(txRes.value.data ?? []);
+      if (settlementRes.status === 'fulfilled') setSettlement(settlementRes.value.data ?? []);
+      setFinancialsLoading(false);
+    };
+    void loadFinancials();
+  }, [merchant.id]);
+
+  const fmtNaira = (n: number) => `₦${n.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+
   return (
     <div>
       <button
@@ -74,7 +114,31 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      {/* Wallet summary */}
+      <div className="bg-[#0F172A] rounded-2xl p-6 grid grid-cols-3 gap-6 mb-5">
+        {financialsLoading ? (
+          <div className="col-span-3 text-white/40 text-[13px]">Loading financials…</div>
+        ) : wallet ? (
+          <>
+            <div>
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Available Balance</p>
+              <p className="text-[26px] font-black text-[#00d66f]">{fmtNaira(wallet.available_balance ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Pending Balance</p>
+              <p className="text-[26px] font-black text-white">{fmtNaira(wallet.pending_balance ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Total Earned (Lifetime)</p>
+              <p className="text-[26px] font-black text-white/70">{fmtNaira(wallet.total_earned ?? 0)}</p>
+            </div>
+          </>
+        ) : (
+          <div className="col-span-3 text-white/40 text-[13px]">Wallet data unavailable.</div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-5 mb-5">
         {/* Business Info */}
         <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
           <div className="px-5 py-3.5 border-b border-[#F1F5F9]">
@@ -183,6 +247,116 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
           </div>
         </section>
       </div>
+
+      {/* Transactions */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden mb-5">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Payment Plans</p>
+          {!financialsLoading && (
+            <span className="text-[11px] font-bold text-[#94A3B8] bg-[#F1F5F9] px-2.5 py-1 rounded-full">
+              {transactions.length} total
+            </span>
+          )}
+        </div>
+        {financialsLoading ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+        ) : transactions.length === 0 ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">No payment plans yet.</div>
+        ) : (
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                {['Plan', 'Amount', 'Progress', 'Status', 'Created'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.slice(0, 10).map(tx => {
+                const total = tx.totalAmountDue?.amount ?? tx.principalAmount?.amount ?? 0;
+                const paid = tx.amountPaid?.amount ?? 0;
+                const insts = tx.installments ?? [];
+                const paidCount = insts.filter(i => i.status === 'paid').length;
+                const pct = insts.length > 0 ? Math.round((paidCount / insts.length) * 100) : 0;
+                return (
+                  <tr key={tx.id} className="border-b border-[#F1F5F9] last:border-0">
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-[#0F172A] truncate max-w-[160px]">{tx.title ?? 'Payment Plan'}</p>
+                      <code className="text-[10px] text-[#94A3B8]">{tx.id.slice(0, 12)}…</code>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-[#0F172A]">₦{total.toLocaleString('en-NG')}</p>
+                      <p className="text-[11px] text-[#16A34A]">₦{paid.toLocaleString('en-NG')} paid</p>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00d66f] rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[11px] text-[#64748B] font-semibold">{paidCount}/{insts.length}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5"><TxBadge status={tx.status} /></td>
+                    <td className="px-4 py-3.5 text-[#64748B] text-[12px]">
+                      {tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* Settlement entries */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Settlement Entries</p>
+          {!financialsLoading && (
+            <span className="text-[11px] font-bold text-[#94A3B8] bg-[#F1F5F9] px-2.5 py-1 rounded-full">
+              {settlement.length} entries
+            </span>
+          )}
+        </div>
+        {financialsLoading ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+        ) : settlement.length === 0 ? (
+          <div className="py-10 text-center text-[#94A3B8] text-[13px]">No settlement entries yet.</div>
+        ) : (
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                {['Entry ID', 'Type', 'Amount', 'Date'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-[#64748B]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {settlement.slice(0, 20).map(entry => {
+                const amount = entry.amount ?? entry.json?.amount ?? 0;
+                const type = entry.type ?? entry.json?.type ?? '—';
+                const isCredit = type.includes('credit') || type.includes('payout');
+                return (
+                  <tr key={entry.id} className="border-b border-[#F1F5F9] last:border-0">
+                    <td className="px-4 py-3.5">
+                      <code className="text-[11px] text-[#94A3B8]">{entry.id?.slice(0, 16)}…</code>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${isCredit ? 'bg-[#F0FDF4] text-[#16A34A]' : 'bg-[#F1F5F9] text-[#64748B]'}`}>
+                        {type.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 font-bold text-[#0F172A]">{fmtNaira(amount)}</td>
+                    <td className="px-4 py-3.5 text-[#64748B] text-[12px]">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' }) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }

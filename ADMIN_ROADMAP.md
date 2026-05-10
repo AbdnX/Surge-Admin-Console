@@ -12,24 +12,13 @@ Work through these in order — check off each feature as it ships.
 - [x] **Delinquency** — list cases, run sweep
 - [x] **Transactions** — list all payment plans, filter by status, view installment schedule detail
 - [x] **Platform Overview Dashboard** — stat cards (transactions, customers, delinquency, pending merchants), alert strip, recent transactions table, click-through nav to each section
+- [x] **Merchant Detail Page** — wallet balance (available/pending/lifetime), payment plans table, settlement entries, business info, Surge settings, tier gate, approve/reject
 
 ---
 
 ## In Progress / Up Next
 
-### 1. Merchant Detail Page
-**Goal:** Full merchant profile — financials, activity, config — in one place.
-
-- [ ] Wallet balance (`GET /api/v1/merchant/{id}/wallet`)
-- [ ] Payout/settlement history (`GET /api/v1/settlement/entries` filtered by merchant)
-- [ ] All their transactions (`GET /api/v1/transactions/merchant/{id}`)
-- [ ] Configured webhook URL + test it (`POST /api/v1/webhooks/test`)
-- [ ] Set minimum accepted tier inline
-- [ ] Approve/reject from the same page
-
----
-
-### 3. Webhook Event Monitor + Replay
+### 2. Webhook Event Monitor + Replay
 **Goal:** Full visibility into outbound webhook delivery so admins can debug failed orders.
 
 - [ ] List all outbound events with status (delivered/failed), latency, merchant (`GET /api/v1/webhooks/events`)
