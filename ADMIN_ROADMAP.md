@@ -13,12 +13,13 @@ Work through these in order — check off each feature as it ships.
 - [x] **Transactions** — list all payment plans, filter by status, view installment schedule detail
 - [x] **Platform Overview Dashboard** — stat cards (transactions, customers, delinquency, pending merchants), alert strip, recent transactions table, click-through nav to each section
 - [x] **Merchant Detail Page** — wallet balance (available/pending/lifetime), payment plans table, settlement entries, business info, Surge settings, tier gate, approve/reject
+- [x] **Webhook Event Monitor** — all events table with type/status/latency, event type filter, replay button per event; Dead Letter Queue tab showing permanently failed attempts with replay
 
 ---
 
 ## In Progress / Up Next
 
-### 2. Webhook Event Monitor + Replay
+### 3. Customer Detail — Risk & Payment Methods
 **Goal:** Full visibility into outbound webhook delivery so admins can debug failed orders.
 
 - [ ] List all outbound events with status (delivered/failed), latency, merchant (`GET /api/v1/webhooks/events`)

@@ -1,12 +1,13 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight, LayoutDashboard } from 'lucide-react';
+import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight, LayoutDashboard, Webhook } from 'lucide-react';
 import { api } from './lib/api';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
 import DelinquencyPage from './pages/DelinquencyPage';
 import TransactionsPage from './pages/TransactionsPage';
 import OverviewPage from './pages/OverviewPage';
+import WebhooksPage from './pages/WebhooksPage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -33,7 +34,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 const AUTH_KEY = 'flex_admin_authed';
-type Tab = 'overview' | 'merchants' | 'customers' | 'delinquency' | 'transactions';
+type Tab = 'overview' | 'merchants' | 'customers' | 'delinquency' | 'transactions' | 'webhooks';
 
 const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
   { id: 'overview',     label: 'Overview',     icon: LayoutDashboard, desc: 'Platform snapshot'        },
@@ -41,6 +42,7 @@ const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] =
   { id: 'customers',    label: 'Customers',    icon: Users,           desc: 'View consumer profiles'   },
   { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  desc: 'All payment plans'        },
   { id: 'delinquency',  label: 'Delinquency',  icon: AlertTriangle,   desc: 'Monitor overdue cases'    },
+  { id: 'webhooks',     label: 'Webhooks',     icon: Webhook,         desc: 'Delivery monitor & DLQ'   },
 ];
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
@@ -232,6 +234,7 @@ export default function App() {
             {tab === 'customers'    && <CustomersPage />}
             {tab === 'transactions' && <TransactionsPage />}
             {tab === 'delinquency'  && <DelinquencyPage />}
+            {tab === 'webhooks'     && <WebhooksPage />}
           </main>
         </div>
 

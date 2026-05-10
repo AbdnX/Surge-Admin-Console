@@ -80,6 +80,28 @@ export interface Transaction {
   createdAt?: string;
 }
 
+export interface WebhookEvent {
+  id: string;
+  merchant_id: string;
+  event_type: string;
+  status?: string;
+  delivered?: boolean;
+  latency_ms?: number;
+  created_at: string;
+  data?: Record<string, unknown>;
+}
+
+export interface WebhookAttempt {
+  id: string;
+  merchant_id: string;
+  webhook_event_id?: string;
+  event_type?: string;
+  status: string;
+  error_message?: string;
+  last_attempted_at: string;
+  attempt_count?: number;
+}
+
 export interface DelinquencyCase {
   id: string;
   payment_plan_id: string;
@@ -158,6 +180,14 @@ export const api = {
       req<{ data: DelinquencyCase[]; total: number }>('GET', '/delinquency/cases'),
     sweep: (asOf: string) =>
       req<unknown>('POST', `/delinquency/sweep?as_of_date=${asOf}`),
+  },
+  webhooks: {
+    events: (page = 1, limit = 50) =>
+      req<{ data: WebhookEvent[]; page: number; limit: number; total: number }>('GET', `/webhooks/events?page=${page}&limit=${limit}`),
+    failedAttempts: (limit = 100) =>
+      req<{ ok: boolean; data: WebhookAttempt[] }>('GET', `/webhooks/failed-attempts?limit=${limit}`),
+    replay: (eventId: string) =>
+      req<{ ok: boolean; delivered: boolean }>('POST', `/webhooks/events/${eventId}/replay`),
   },
   auth: {
     login: (password: string) => 
