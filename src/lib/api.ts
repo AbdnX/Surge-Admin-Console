@@ -212,7 +212,7 @@ export const api = {
     score: (customerId: string) =>
       req<{ ok: boolean; data: { score: number; tier: string; onboarding_completed: boolean; factors?: Record<string, unknown> } }>('GET', `/risk/score/${customerId}`),
     history: (customerId: string, limit = 12) =>
-      req<{ ok: boolean; data: { customer_id: string; data: ScoreSnapshot[] } }>('GET', `/risk/history/${customerId}?limit=${limit}`),
+      req<{ ok: boolean; data: { customer_id: string; data: ScoreSnapshot[] } }>('GET', `/risk/score/${customerId}/history?limit=${limit}`),
     refresh: (customerId: string) =>
       req<{ ok: boolean; data: { score: number; tier: string } }>('POST', `/risk/score/${customerId}/refresh`),
   },
