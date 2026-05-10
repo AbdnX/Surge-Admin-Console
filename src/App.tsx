@@ -1,10 +1,11 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight } from 'lucide-react';
 import { api } from './lib/api';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
 import DelinquencyPage from './pages/DelinquencyPage';
+import TransactionsPage from './pages/TransactionsPage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -31,12 +32,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 const AUTH_KEY = 'flex_admin_authed';
-type Tab = 'merchants' | 'customers' | 'delinquency';
+type Tab = 'merchants' | 'customers' | 'delinquency' | 'transactions';
 
 const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: 'merchants',   label: 'Merchants',   icon: Building2,     desc: 'Manage merchant accounts' },
-  { id: 'customers',   label: 'Customers',   icon: Users,         desc: 'View consumer profiles'   },
-  { id: 'delinquency', label: 'Delinquency', icon: AlertTriangle, desc: 'Monitor overdue cases'    },
+  { id: 'merchants',    label: 'Merchants',    icon: Building2,      desc: 'Manage merchant accounts' },
+  { id: 'customers',    label: 'Customers',    icon: Users,          desc: 'View consumer profiles'   },
+  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight, desc: 'All payment plans'        },
+  { id: 'delinquency',  label: 'Delinquency',  icon: AlertTriangle,  desc: 'Monitor overdue cases'    },
 ];
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
@@ -223,9 +225,10 @@ export default function App() {
 
           {/* Page content */}
           <main className="flex-1 p-7 overflow-y-auto">
-            {tab === 'merchants'   && <MerchantsPage />}
-            {tab === 'customers'   && <CustomersPage />}
-            {tab === 'delinquency' && <DelinquencyPage />}
+            {tab === 'merchants'    && <MerchantsPage />}
+            {tab === 'customers'    && <CustomersPage />}
+            {tab === 'transactions' && <TransactionsPage />}
+            {tab === 'delinquency'  && <DelinquencyPage />}
           </main>
         </div>
 

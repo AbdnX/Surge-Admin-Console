@@ -49,6 +49,37 @@ export interface Customer {
   json?: any;
 }
 
+export interface Transaction {
+  id: string;
+  merchant_id: string;
+  customer_id: string;
+  status: string;
+  created_at: string;
+  // JSON blob fields (flattened)
+  merchantId?: string;
+  customerId?: string;
+  title?: string;
+  scheduleType?: string;
+  installmentCount?: number;
+  principalAmount?: { amount: number; currency: string };
+  depositAmount?: { amount: number; currency: string };
+  amountPaid?: { amount: number; currency: string };
+  amountOutstanding?: { amount: number; currency: string };
+  totalAmountDue?: { amount: number; currency: string };
+  installments?: Array<{
+    id: string;
+    sequenceNumber: number;
+    status: string;
+    dueDate: string;
+    amountDue: { amount: number; currency: string };
+    amountPaid: { amount: number; currency: string };
+  }>;
+  orderReference?: string;
+  orderId?: string;
+  flexScoreAtCreation?: number | null;
+  createdAt?: string;
+}
+
 export interface DelinquencyCase {
   id: string;
   payment_plan_id: string;
@@ -104,6 +135,15 @@ export const api = {
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/approve-verification`),
     rejectVerification: (id: string) =>
       req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/reject-verification`),
+  },
+  transactions: {
+    list: (page = 1, limit = 50, status?: string) => {
+      let url = `/transactions/?page=${page}&limit=${limit}`;
+      if (status) url += `&tx_status=${status}`;
+      return req<{ ok: boolean; data: { data: Transaction[]; total: number; page: number; limit: number } }>('GET', url);
+    },
+    get: (id: string) =>
+      req<{ ok: boolean; data: Transaction }>('GET', `/transactions/${id}`),
   },
   delinquency: {
     cases: () =>
