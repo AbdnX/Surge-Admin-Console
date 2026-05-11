@@ -236,7 +236,7 @@ export default function App() {
             {tab === 'overview'     && <OverviewPage onNavigate={setTab} />}
             {tab === 'merchants'    && <MerchantsPage />}
             {tab === 'customers'    && <CustomersPage />}
-            {tab === 'transactions' && <TransactionsPage />}
+            {tab === 'transactions' && <TransactionsPage onNavigate={(t) => setTab(t as Tab)} />}
             {tab === 'delinquency'  && <DelinquencyPage />}
             {tab === 'webhooks'     && <WebhooksPage />}
             {tab === 'scheduling'   && <SchedulingPage />}

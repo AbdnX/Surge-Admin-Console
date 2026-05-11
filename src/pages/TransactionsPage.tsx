@@ -52,13 +52,49 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 // ── Transaction Detail ────────────────────────────────────────────────────────
-function TransactionDetail({ tx, onBack }: { tx: Transaction; onBack: () => void }) {
+function TransactionDetail({
+  tx,
+  onBack,
+  onNavigate,
+}: {
+  tx: Transaction;
+  onBack: () => void;
+  onNavigate: (tab: string) => void;
+}) {
+  const [merchantName, setMerchantName] = useState<string | null>(null);
+  const [customerProfile, setCustomerProfile] = useState<{ full_name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    const mid = tx.merchant_id ?? tx.merchantId;
+    const cid = tx.customer_id ?? tx.customerId;
+
+    if (mid) {
+      api.merchants.getDetail(mid)
+        .then(res => {
+          const m = res.data;
+          setMerchantName(m.display_name || m.legal_name || null);
+        })
+        .catch(() => setMerchantName(null));
+    }
+
+    if (cid) {
+      api.customers.getDetail(cid)
+        .then(res => {
+          const c = res.data;
+          setCustomerProfile({ full_name: c.full_name, email: c.email });
+        })
+        .catch(() => setCustomerProfile(null));
+    }
+  }, [tx.id]);
+
   const installments = tx.installments ?? [];
   const paidCount = installments.filter(i => i.status === 'paid').length;
   const total = tx.totalAmountDue?.amount ?? tx.principalAmount?.amount ?? 0;
   const paid = tx.amountPaid?.amount ?? 0;
   const outstanding = tx.amountOutstanding?.amount ?? (total - paid);
-  const currency = tx.totalAmountDue?.currency ?? 'NGN';
+
+  const mid = tx.merchant_id ?? tx.merchantId ?? '—';
+  const cid = tx.customer_id ?? tx.customerId ?? '—';
 
   return (
     <div>
@@ -113,8 +149,36 @@ function TransactionDetail({ tx, onBack }: { tx: Transaction; onBack: () => void
           <div className="p-5 grid grid-cols-2 gap-5">
             <DetailRow label="Plan ID" value={<code className="text-[11px] break-all">{tx.id}</code>} />
             <DetailRow label="Order Ref" value={tx.orderReference ?? tx.orderId ?? '—'} />
-            <DetailRow label="Merchant ID" value={<code className="text-[11px] break-all">{tx.merchant_id ?? tx.merchantId}</code>} />
-            <DetailRow label="Customer ID" value={<code className="text-[11px] break-all">{tx.customer_id ?? tx.customerId}</code>} />
+
+            {/* Merchant */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Merchant</span>
+              <button
+                onClick={() => onNavigate('merchants')}
+                className="text-left group"
+              >
+                <p className="font-bold text-[14px] text-[#0F172A] group-hover:text-[#00d66f] transition-colors">
+                  {merchantName ?? <span className="text-[#94A3B8] font-normal italic">loading…</span>}
+                </p>
+                <code className="text-[10px] text-[#94A3B8] break-all">{mid}</code>
+              </button>
+            </div>
+
+            {/* Customer */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Customer</span>
+              <button
+                onClick={() => onNavigate('customers')}
+                className="text-left group"
+              >
+                <p className="font-bold text-[14px] text-[#0F172A] group-hover:text-[#00d66f] transition-colors">
+                  {customerProfile?.full_name ?? <span className="text-[#94A3B8] font-normal italic">loading…</span>}
+                </p>
+                <p className="text-[11px] text-[#64748B]">{customerProfile?.email ?? ''}</p>
+                <code className="text-[10px] text-[#94A3B8] break-all">{cid}</code>
+              </button>
+            </div>
+
             <DetailRow label="Schedule" value={<span className="capitalize">{tx.scheduleType ?? '—'}</span>} />
             <DetailRow
               label="Created"
@@ -199,7 +263,7 @@ function TransactionDetail({ tx, onBack }: { tx: Transaction; onBack: () => void
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function TransactionsPage() {
+export default function TransactionsPage({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -255,7 +319,7 @@ export default function TransactionsPage() {
     return (
       <>
         <Toast />
-        <TransactionDetail tx={selected} onBack={() => setSelected(null)} />
+        <TransactionDetail tx={selected} onBack={() => setSelected(null)} onNavigate={onNavigate ?? (() => {})} />
       </>
     );
   }

@@ -167,6 +167,8 @@ export const api = {
   merchants: {
     list: (status?: string) =>
       req<{ data: Merchant[]; total: number }>('GET', `/identity/merchants${status ? `?onboarding_status=${status}` : ''}`),
+    getDetail: (id: string) =>
+      req<{ ok: boolean; data: Merchant }>('GET', `/admin/merchants/${id}`),
     onboard: (data: {
       legal_name: string; display_name: string; business_type: string;
       country: string; email: string; phone: string; password: string;
@@ -177,7 +179,7 @@ export const api = {
       req<Merchant>('POST', `/identity/merchants/${id}/approve`, {}),
     reject: (id: string) =>
       req<Merchant>('POST', `/identity/merchants/${id}/reject`),
-    
+
     // New Admin API Endpoints
     listPending: () =>
       req<Merchant[]>('GET', '/admin/merchants/pending'),
