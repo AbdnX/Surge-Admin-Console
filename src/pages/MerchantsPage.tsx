@@ -129,10 +129,13 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
   const [financialsLoading, setFinancialsLoading] = useState(true);
   const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
   const [enablingApiAccess, setEnablingApiAccess] = useState(false);
+  const [disablingApiAccess, setDisablingApiAccess] = useState(false);
   const [apiAccessEnabled, setApiAccessEnabled] = useState<boolean>(
     merchant.api_key_enabled === true
   );
   const [reissuing, setReissuing] = useState(false);
+  const [showRotateNameModal, setShowRotateNameModal] = useState(false);
+  const [rotateName, setRotateName] = useState('');
 
   const handleEnableApiAccess = async () => {
     setEnablingApiAccess(true);
@@ -152,11 +155,30 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
     }
   };
 
-  const handleReissueKey = async () => {
-    if (!confirm('Rotate this merchant\'s API key? Their current key will stop working immediately.')) return;
+  const handleDisableApiAccess = async () => {
+    if (!confirm('Disable API access? Their current key will stop working immediately.')) return;
+    setDisablingApiAccess(true);
+    try {
+      const res = await api.merchants.disableApiAccess(merchant.id);
+      if (res.ok) {
+        setApiAccessEnabled(false);
+        onUpdate({ ...merchant, api_key_enabled: false });
+        notify('API access disabled');
+      } else {
+        notify('Failed to disable API access', false);
+      }
+    } catch {
+      notify('Failed to disable API access', false);
+    } finally {
+      setDisablingApiAccess(false);
+    }
+  };
+
+  const handleReissueKey = async (name: string) => {
+    setShowRotateNameModal(false);
     setReissuing(true);
     try {
-      const res = await api.merchants.rotateApiKey(merchant.id);
+      const res = await api.merchants.rotateApiKey(merchant.id, name || 'Support Rotation');
       if (res.ok && res.data?.apiKey) {
         setIssuedApiKey(res.data.apiKey);
       } else {
@@ -189,6 +211,43 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
 
   return (
     <div>
+      {/* Admin rotate name modal */}
+      {showRotateNameModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <p className="text-[15px] font-black text-[#0F172A] mb-1">Rotate API Key (Support)</p>
+            <p className="text-[12px] text-[#64748B] mb-4">Give this key a name to identify it in the merchant's history.</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4">
+              <p className="text-[11px] text-amber-700 font-semibold">The merchant's current key will be invalidated immediately.</p>
+            </div>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1.5">Key Name</label>
+            <input
+              autoFocus
+              type="text"
+              value={rotateName}
+              onChange={e => setRotateName(e.target.value)}
+              placeholder="e.g. Support Rotation"
+              maxLength={64}
+              className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] text-[13px] text-[#0F172A] outline-none mb-5"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { handleReissueKey(rotateName); setRotateName(''); }}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-[13px] font-bold hover:bg-red-700 transition-colors"
+              >
+                Rotate Key
+              </button>
+              <button
+                onClick={() => { setShowRotateNameModal(false); setRotateName(''); }}
+                className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-[#64748B] border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {issuedApiKey && (
         <ApiKeyModal
           apiKey={issuedApiKey}
@@ -365,22 +424,30 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#86EFAC] px-2.5 py-1 rounded-full">
                           ✓ API access enabled
                         </span>
                       </div>
                       <p className="text-[11px] text-[#94A3B8]">
                         Merchant can generate and rotate their own key from their dashboard.
-                        Use rotate below only for support cases.
                       </p>
-                      <button
-                        onClick={handleReissueKey}
-                        disabled={reissuing}
-                        className="self-start px-4 py-2 bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
-                      >
-                        {reissuing ? 'Rotating…' : 'Rotate Key (support)'}
-                      </button>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => setShowRotateNameModal(true)}
+                          disabled={reissuing}
+                          className="self-start px-4 py-2 bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
+                        >
+                          {reissuing ? 'Rotating…' : 'Rotate Key (support)'}
+                        </button>
+                        <button
+                          onClick={handleDisableApiAccess}
+                          disabled={disablingApiAccess}
+                          className="self-start px-4 py-2 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-xl text-[12px] font-bold hover:bg-[#FFE4E6] transition-colors disabled:opacity-50"
+                        >
+                          {disablingApiAccess ? 'Disabling…' : 'Disable API Access'}
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

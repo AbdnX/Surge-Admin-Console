@@ -190,8 +190,10 @@ export const api = {
       req<any>('PUT', `/admin/merchants/${id}/tier`, { min_accepted_tier }),
     enableApiAccess: (merchantId: string) =>
       req<{ ok: boolean; data: { merchantId: string; apiKeyEnabled: boolean } }>('PUT', `/admin/merchants/${merchantId}/enable-api-access`),
-    rotateApiKey: (merchantId: string) =>
-      req<{ ok: boolean; data: { merchantId: string; apiKey: string; apiKeyPrefix: string } }>('POST', `/merchant/${merchantId}/rotate-api-key`),
+    disableApiAccess: (merchantId: string) =>
+      req<{ ok: boolean; data: { merchantId: string; apiKeyEnabled: boolean } }>('PUT', `/admin/merchants/${merchantId}/disable-api-access`),
+    rotateApiKey: (merchantId: string, name = 'Support Rotation') =>
+      req<{ ok: boolean; data: { merchantId: string; apiKey: string; apiKeyPrefix: string; apiKeyName: string } }>('POST', `/merchant/${merchantId}/rotate-api-key`, { name }),
   },
   customers: {
     restrict: (id: string) =>
