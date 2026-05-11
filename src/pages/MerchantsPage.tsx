@@ -128,7 +128,28 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
   const [settlement, setSettlement] = useState<any[]>([]);
   const [financialsLoading, setFinancialsLoading] = useState(true);
   const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
+  const [enablingApiAccess, setEnablingApiAccess] = useState(false);
+  const [apiAccessEnabled, setApiAccessEnabled] = useState<boolean>(
+    !!(merchant as any).api_key_enabled
+  );
   const [reissuing, setReissuing] = useState(false);
+
+  const handleEnableApiAccess = async () => {
+    setEnablingApiAccess(true);
+    try {
+      const res = await api.merchants.enableApiAccess(merchant.id);
+      if (res.ok) {
+        setApiAccessEnabled(true);
+        notify('API access enabled — merchant can now generate their key');
+      } else {
+        notify('Failed to enable API access', false);
+      }
+    } catch {
+      notify('Failed to enable API access', false);
+    } finally {
+      setEnablingApiAccess(false);
+    }
+  };
 
   const handleReissueKey = async () => {
     if (!confirm('Rotate this merchant\'s API key? Their current key will stop working immediately.')) return;
@@ -323,18 +344,44 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
             {merchant.onboarding_status === 'approved' && (
               <div className="flex flex-col gap-3">
                 <p className="text-[12px] text-[#94A3B8]">This merchant is live and can accept Surge payment plans.</p>
-                <div className="border-t border-[#F1F5F9] pt-3">
-                  <p className="text-[12px] font-bold text-[#0F172A] mb-1">API Key</p>
-                  <p className="text-[11px] text-[#94A3B8] mb-2">
-                    Rotate to invalidate the current key and issue a new one. The new key will be shown once — copy and send it to the merchant.
-                  </p>
-                  <button
-                    onClick={handleReissueKey}
-                    disabled={reissuing}
-                    className="px-4 py-2 bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
-                  >
-                    {reissuing ? 'Rotating…' : '🔑 Rotate API Key'}
-                  </button>
+
+                {/* API Access section */}
+                <div className="border-t border-[#F1F5F9] pt-3 flex flex-col gap-2">
+                  <p className="text-[12px] font-bold text-[#0F172A]">API Access</p>
+
+                  {!apiAccessEnabled ? (
+                    <>
+                      <p className="text-[11px] text-[#94A3B8]">
+                        Merchant cannot generate an API key yet. Enable access once they're ready to integrate.
+                      </p>
+                      <button
+                        onClick={handleEnableApiAccess}
+                        disabled={enablingApiAccess}
+                        className="self-start px-4 py-2 bg-[#0F172A] text-white rounded-xl text-[12px] font-bold hover:bg-[#1E293B] transition-colors disabled:opacity-50"
+                      >
+                        {enablingApiAccess ? 'Enabling…' : '🔑 Enable API Access'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#86EFAC] px-2.5 py-1 rounded-full">
+                          ✓ API access enabled
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#94A3B8]">
+                        Merchant can generate and rotate their own key from their dashboard.
+                        Use rotate below only for support cases.
+                      </p>
+                      <button
+                        onClick={handleReissueKey}
+                        disabled={reissuing}
+                        className="self-start px-4 py-2 bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
+                      >
+                        {reissuing ? 'Rotating…' : 'Rotate Key (support)'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -468,7 +515,6 @@ export default function MerchantsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [lastCreated, setLastCreated] = useState<{ email: string; merchantId: string } | null>(null);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
-  const [approvalApiKey, setApprovalApiKey] = useState<{ key: string; merchantName: string } | null>(null);
 
   const notify = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -510,12 +556,7 @@ export default function MerchantsPage() {
   const handleApprove = async (id: string) => {
     setActionId(id);
     try {
-      const res = await api.merchants.updateStatus(id, 'approved');
-      const apiKey = res?.data?.apiKey;
-      if (apiKey) {
-        const merchant = merchants.find(m => m.id === id);
-        setApprovalApiKey({ key: apiKey, merchantName: merchant?.display_name ?? id });
-      }
+      await api.merchants.updateStatus(id, 'approved');
       notify('Merchant approved');
       await load(filter);
     } catch (err) { notify(err instanceof Error ? err.message : 'Failed', false); }
@@ -574,14 +615,6 @@ export default function MerchantsPage() {
   return (
     <div>
       <Toast />
-
-      {approvalApiKey && (
-        <ApiKeyModal
-          apiKey={approvalApiKey.key}
-          merchantName={approvalApiKey.merchantName}
-          onClose={() => setApprovalApiKey(null)}
-        />
-      )}
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
