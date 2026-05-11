@@ -34,6 +34,7 @@ export interface Merchant {
   approval_status: string;
   flex_settings: Record<string, unknown> | null;
   created_at: string;
+  api_key_enabled: boolean;
 }
 
 export interface Customer {

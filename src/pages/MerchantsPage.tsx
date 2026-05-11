@@ -130,7 +130,7 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
   const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
   const [enablingApiAccess, setEnablingApiAccess] = useState(false);
   const [apiAccessEnabled, setApiAccessEnabled] = useState<boolean>(
-    !!(merchant as any).api_key_enabled
+    merchant.api_key_enabled === true
   );
   const [reissuing, setReissuing] = useState(false);
 
@@ -140,6 +140,7 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
       const res = await api.merchants.enableApiAccess(merchant.id);
       if (res.ok) {
         setApiAccessEnabled(true);
+        onUpdate({ ...merchant, api_key_enabled: true });
         notify('API access enabled — merchant can now generate their key');
       } else {
         notify('Failed to enable API access', false);
