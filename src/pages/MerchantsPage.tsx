@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 import { api, type Merchant, type Transaction } from '../lib/api';
 
 const TX_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -56,6 +57,57 @@ const EMPTY = { legal_name: '', display_name: '', business_type: 'retail', count
 const inputCls = 'w-full px-3 py-2 rounded-[8px] border border-[#E2E8F0] text-[14px] text-[#0F172A] bg-white outline-none';
 const labelCls = 'block text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1';
 
+// ── API Key Modal ─────────────────────────────────────────────────────────────
+function ApiKeyModal({ apiKey, merchantName, onClose }: { apiKey: string; merchantName: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(apiKey).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] flex items-center justify-center text-[20px]">🔑</div>
+          <div>
+            <p className="text-[15px] font-black text-[#0F172A]">API Key Issued</p>
+            <p className="text-[12px] text-[#64748B]">{merchantName}</p>
+          </div>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+          <p className="text-[12px] font-bold text-amber-700">This key is shown once and cannot be retrieved again.</p>
+          <p className="text-[11px] text-amber-600 mt-0.5">Copy it now and send it to the merchant securely.</p>
+        </div>
+
+        <div className="flex items-center gap-2 mb-5">
+          <div className="flex-1 font-mono text-[12px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-3 text-[#0F172A] overflow-x-auto whitespace-nowrap select-all">
+            {apiKey}
+          </div>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-4 h-10 text-[12px] font-bold text-white bg-[#0F172A] rounded-xl hover:bg-[#1E293B] transition-colors shrink-0"
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 bg-[#F1F5F9] text-[#64748B] rounded-xl text-[13px] font-semibold hover:bg-[#E2E8F0] transition-colors"
+        >
+          I've copied the key — close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Merchant Detail Page ──────────────────────────────────────────────────────
 function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChange, onUpdate, actionId, tierSaving, notify }: {
   merchant: Merchant;
@@ -75,6 +127,25 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [settlement, setSettlement] = useState<any[]>([]);
   const [financialsLoading, setFinancialsLoading] = useState(true);
+  const [issuedApiKey, setIssuedApiKey] = useState<string | null>(null);
+  const [reissuing, setReissuing] = useState(false);
+
+  const handleReissueKey = async () => {
+    if (!confirm('Rotate this merchant\'s API key? Their current key will stop working immediately.')) return;
+    setReissuing(true);
+    try {
+      const res = await api.merchants.rotateApiKey(merchant.id);
+      if (res.ok && res.data?.apiKey) {
+        setIssuedApiKey(res.data.apiKey);
+      } else {
+        notify('Failed to rotate API key', false);
+      }
+    } catch {
+      notify('Failed to rotate API key', false);
+    } finally {
+      setReissuing(false);
+    }
+  };
 
   useEffect(() => {
     const loadFinancials = async () => {
@@ -96,6 +167,14 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
 
   return (
     <div>
+      {issuedApiKey && (
+        <ApiKeyModal
+          apiKey={issuedApiKey}
+          merchantName={merchant.display_name}
+          onClose={() => setIssuedApiKey(null)}
+        />
+      )}
+
       <button
         onClick={onBack}
         className="flex items-center gap-1.5 text-[#64748B] text-[14px] font-semibold mb-7 hover:text-[#0F172A] transition-colors"
@@ -242,7 +321,22 @@ function MerchantDetailPage({ merchant, onBack, onApprove, onReject, onTierChang
               )}
             </div>
             {merchant.onboarding_status === 'approved' && (
-              <p className="text-[12px] text-[#94A3B8]">This merchant is live and can accept Surge payment plans.</p>
+              <div className="flex flex-col gap-3">
+                <p className="text-[12px] text-[#94A3B8]">This merchant is live and can accept Surge payment plans.</p>
+                <div className="border-t border-[#F1F5F9] pt-3">
+                  <p className="text-[12px] font-bold text-[#0F172A] mb-1">API Key</p>
+                  <p className="text-[11px] text-[#94A3B8] mb-2">
+                    Rotate to invalidate the current key and issue a new one. The new key will be shown once — copy and send it to the merchant.
+                  </p>
+                  <button
+                    onClick={handleReissueKey}
+                    disabled={reissuing}
+                    className="px-4 py-2 bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
+                  >
+                    {reissuing ? 'Rotating…' : '🔑 Rotate API Key'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </section>
@@ -374,6 +468,7 @@ export default function MerchantsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [lastCreated, setLastCreated] = useState<{ email: string; merchantId: string } | null>(null);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [approvalApiKey, setApprovalApiKey] = useState<{ key: string; merchantName: string } | null>(null);
 
   const notify = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -415,7 +510,12 @@ export default function MerchantsPage() {
   const handleApprove = async (id: string) => {
     setActionId(id);
     try {
-      await api.merchants.updateStatus(id, 'approved');
+      const res = await api.merchants.updateStatus(id, 'approved');
+      const apiKey = res?.data?.apiKey;
+      if (apiKey) {
+        const merchant = merchants.find(m => m.id === id);
+        setApprovalApiKey({ key: apiKey, merchantName: merchant?.display_name ?? id });
+      }
       notify('Merchant approved');
       await load(filter);
     } catch (err) { notify(err instanceof Error ? err.message : 'Failed', false); }
@@ -474,6 +574,14 @@ export default function MerchantsPage() {
   return (
     <div>
       <Toast />
+
+      {approvalApiKey && (
+        <ApiKeyModal
+          apiKey={approvalApiKey.key}
+          merchantName={approvalApiKey.merchantName}
+          onClose={() => setApprovalApiKey(null)}
+        />
+      )}
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">

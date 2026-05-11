@@ -184,9 +184,11 @@ export const api = {
     listPending: () =>
       req<Merchant[]>('GET', '/admin/merchants/pending'),
     updateStatus: (id: string, status: 'approved' | 'rejected') =>
-      req<any>('PUT', `/admin/merchants/${id}/status`, { status }),
+      req<{ ok: boolean; data: { merchantId: string; status: string; apiKey?: string } }>('PUT', `/admin/merchants/${id}/status`, { status }),
     updateTier: (id: string, min_accepted_tier: string) =>
       req<any>('PUT', `/admin/merchants/${id}/tier`, { min_accepted_tier }),
+    rotateApiKey: (merchantId: string) =>
+      req<{ ok: boolean; data: { merchantId: string; apiKey: string; apiKeyPrefix: string } }>('POST', `/merchant/${merchantId}/rotate-api-key`),
   },
   customers: {
     restrict: (id: string) =>
