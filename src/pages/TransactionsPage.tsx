@@ -61,8 +61,9 @@ function TransactionDetail({
   onBack: () => void;
   onNavigate: (tab: string) => void;
 }) {
-  const [merchantName, setMerchantName] = useState<string | null>(null);
-  const [customerProfile, setCustomerProfile] = useState<{ full_name: string; email: string } | null>(null);
+  // undefined = still fetching, null = fetch failed/not found, string/object = loaded
+  const [merchantName, setMerchantName] = useState<string | null | undefined>(undefined);
+  const [customerProfile, setCustomerProfile] = useState<{ full_name: string; email: string } | null | undefined>(undefined);
 
   useEffect(() => {
     const mid = tx.merchant_id ?? tx.merchantId;
@@ -70,20 +71,18 @@ function TransactionDetail({
 
     if (mid) {
       api.merchants.getDetail(mid)
-        .then(res => {
-          const m = res.data;
-          setMerchantName(m.display_name || m.legal_name || null);
-        })
+        .then(res => setMerchantName(res.data.display_name || res.data.legal_name || null))
         .catch(() => setMerchantName(null));
+    } else {
+      setMerchantName(null);
     }
 
     if (cid) {
       api.customers.getDetail(cid)
-        .then(res => {
-          const c = res.data;
-          setCustomerProfile({ full_name: c.full_name, email: c.email });
-        })
+        .then(res => setCustomerProfile({ full_name: res.data.full_name, email: res.data.email }))
         .catch(() => setCustomerProfile(null));
+    } else {
+      setCustomerProfile(null);
     }
   }, [tx.id]);
 
@@ -158,7 +157,11 @@ function TransactionDetail({
                 className="text-left group"
               >
                 <p className="font-bold text-[14px] text-[#0F172A] group-hover:text-[#00d66f] transition-colors">
-                  {merchantName ?? <span className="text-[#94A3B8] font-normal italic">loading…</span>}
+                  {merchantName === undefined
+                    ? <span className="text-[#94A3B8] font-normal italic text-[12px]">loading…</span>
+                    : merchantName
+                      ? merchantName
+                      : <span className="text-[#94A3B8] font-normal">Unknown merchant</span>}
                 </p>
                 <code className="text-[10px] text-[#94A3B8] break-all">{mid}</code>
               </button>
@@ -172,9 +175,15 @@ function TransactionDetail({
                 className="text-left group"
               >
                 <p className="font-bold text-[14px] text-[#0F172A] group-hover:text-[#00d66f] transition-colors">
-                  {customerProfile?.full_name ?? <span className="text-[#94A3B8] font-normal italic">loading…</span>}
+                  {customerProfile === undefined
+                    ? <span className="text-[#94A3B8] font-normal italic text-[12px]">loading…</span>
+                    : customerProfile
+                      ? customerProfile.full_name
+                      : <span className="text-[#94A3B8] font-normal">Unknown customer</span>}
                 </p>
-                <p className="text-[11px] text-[#64748B]">{customerProfile?.email ?? ''}</p>
+                {customerProfile?.email && (
+                  <p className="text-[11px] text-[#64748B]">{customerProfile.email}</p>
+                )}
                 <code className="text-[10px] text-[#94A3B8] break-all">{cid}</code>
               </button>
             </div>
