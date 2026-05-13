@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ShieldCheck, Save, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Save, Clock, CheckCircle2, AlertCircle, ChevronRight, X } from 'lucide-react';
 import { api } from '../lib/api';
 import type {
   DecisionEngineRecord,
@@ -76,6 +76,151 @@ function SectionCard({ title, subtitle, children, action }: {
 }
 
 // ---------------------------------------------------------------------------
+// Component type metadata
+// ---------------------------------------------------------------------------
+
+const TYPE_META: Record<string, { label: string; description: (c: ScoreComponent) => string; formula: (c: ScoreComponent) => string }> = {
+  boolean: {
+    label: 'Boolean',
+    description: c => `Awards the full ${c.max_points} points when the condition is met; zero otherwise. No partial credit.`,
+    formula: c => `${c.max_points} pts  if condition = true\n0 pts  if condition = false`,
+  },
+  wallet: {
+    label: 'Wallet',
+    description: c => `Awards ${c.points_per_unit ?? '?'} points per active payment method, capped at ${c.unit_cap ?? '?'} methods. Total maximum is ${c.max_points} points.`,
+    formula: c => `min(active_methods, ${c.unit_cap ?? 'cap'}) × ${c.points_per_unit ?? 'pts_per'} = max ${c.max_points} pts`,
+  },
+  ratio: {
+    label: 'Ratio',
+    description: c => `Scales linearly from 0 to ${c.max_points} points based on the payment consistency ratio — on-time payments divided by total payments.`,
+    formula: c => `consistency_ratio × ${c.max_points} pts  (ratio: 0.0 – 1.0)`,
+  },
+  age: {
+    label: 'Age',
+    description: c => `Awards ${c.points_per_unit ?? '?'} point per month of account age, up to ${c.max_points} points (${c.max_points} months to reach the maximum).`,
+    formula: c => `min(account_age_months × ${c.points_per_unit ?? 'pts_per'}, ${c.max_points} pts)`,
+  },
+  velocity: {
+    label: 'Velocity',
+    description: c => `Awards ${c.points_per_unit ?? '?'} points per recently paid installment, up to ${c.max_points} points.`,
+    formula: c => `min(recent_installments × ${c.points_per_unit ?? 'pts_per'}, ${c.max_points} pts)`,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Score component detail modal
+// ---------------------------------------------------------------------------
+
+function ComponentDetailModal({
+  component,
+  onApply,
+  onClose,
+}: {
+  component: ScoreComponent;
+  onApply: (updated: ScoreComponent) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<ScoreComponent>({ ...component });
+  const meta = TYPE_META[draft.type] ?? TYPE_META.boolean;
+  const hasPointsPerUnit = ['wallet', 'age', 'velocity'].includes(draft.type);
+  const hasUnitCap       = draft.type === 'wallet';
+
+  const f = (key: keyof ScoreComponent, val: unknown) =>
+    setDraft(p => ({ ...p, [key]: val }));
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#F1F5F9]">
+          <div>
+            <p className="text-[15px] font-black text-[#0F172A]">{draft.label}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#64748B] uppercase tracking-wide">
+                {meta.label}
+              </span>
+              <span className="text-[12px] text-[#94A3B8] font-mono">{draft.key}</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#0F172A] transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* How it's calculated */}
+          <div className="bg-[#F8FAFC] rounded-xl p-4">
+            <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-2">How it's calculated</p>
+            <p className="text-[13px] text-[#475569] leading-relaxed mb-3">{meta.description(draft)}</p>
+            <code className="block text-[12px] font-mono text-[#0F172A] bg-white border border-[#E8ECF0] rounded-lg px-3 py-2 whitespace-pre">
+              {meta.formula(draft)}
+            </code>
+          </div>
+
+          {/* Editable parameters */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Max Points</Label>
+              <input
+                type="number" min={0} max={1000} value={draft.max_points}
+                onChange={e => f('max_points', Number(e.target.value))}
+                className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white"
+              />
+            </div>
+            {hasPointsPerUnit && (
+              <div>
+                <Label>Points per Unit</Label>
+                <input
+                  type="number" value={draft.points_per_unit ?? ''}
+                  onChange={e => f('points_per_unit', e.target.value === '' ? undefined : Number(e.target.value))}
+                  className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white"
+                />
+              </div>
+            )}
+            {hasUnitCap && (
+              <div>
+                <Label>Unit Cap</Label>
+                <input
+                  type="number" min={1} value={draft.unit_cap ?? ''}
+                  onChange={e => f('unit_cap', e.target.value === '' ? undefined : Number(e.target.value))}
+                  className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Enabled toggle */}
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div
+              className={`w-10 h-5 rounded-full relative transition-colors ${draft.enabled ? 'bg-[#0F172A]' : 'bg-[#CBD5E1]'}`}
+              onClick={() => f('enabled', !draft.enabled)}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${draft.enabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+            <span className="text-[13px] font-semibold text-[#0F172A]">{draft.enabled ? 'Enabled' : 'Disabled'}</span>
+          </label>
+
+          <p className="text-[11px] text-[#94A3B8]">
+            Changes are queued locally. Hit <span className="font-bold text-[#0F172A]">Save Changes</span> on the Score Config tab to persist them.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-2 justify-end border-t border-[#F1F5F9] pt-4">
+          <button onClick={onClose}
+            className="px-4 py-2 border border-[#E2E8F0] text-[#64748B] rounded-lg text-[13px] font-semibold hover:bg-[#F1F5F9]">
+            Cancel
+          </button>
+          <button onClick={() => { onApply(draft); onClose(); }}
+            className="px-4 py-2 bg-[#0F172A] text-white rounded-lg text-[13px] font-bold">
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tab components
 // ---------------------------------------------------------------------------
 
@@ -91,11 +236,24 @@ function ScoreTab({
   onSave: () => void;
   saving: boolean;
 }) {
+  const [detailComponent, setDetailComponent] = useState<ScoreComponent | null>(null);
   const total = scoreComponents.filter(c => c.enabled).reduce((s, c) => s + c.max_points, 0);
   const valid = total === 1000;
 
+  const applyDetail = (updated: ScoreComponent) => {
+    setScoreComponents(scoreComponents.map(c => c.key === updated.key ? updated : c));
+  };
+
   return (
     <div className="space-y-5">
+      {detailComponent && (
+        <ComponentDetailModal
+          component={detailComponent}
+          onApply={applyDetail}
+          onClose={() => setDetailComponent(null)}
+        />
+      )}
+
       {/* Score Components */}
       <SectionCard
         title="Score Components"
@@ -108,6 +266,7 @@ function ScoreTab({
               <TH>Type</TH>
               <TH right>Max Points</TH>
               <TH right>Enabled</TH>
+              <TH right> </TH>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F1F5F9]">
@@ -141,6 +300,14 @@ function ScoreTab({
                     className="accent-[#0F172A] w-4 h-4"
                   />
                 </TD>
+                <td className="px-5 py-3 text-right">
+                  <button
+                    onClick={() => setDetailComponent(c)}
+                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors"
+                  >
+                    Details <ChevronRight size={13} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -152,7 +319,7 @@ function ScoreTab({
               <td className={`px-5 py-2.5 text-right text-[13px] font-bold ${valid ? 'text-[#16A34A]' : 'text-[#E11D48]'}`}>
                 {total} / 1,000
               </td>
-              <td />
+              <td colSpan={2} />
             </tr>
           </tfoot>
         </table>
