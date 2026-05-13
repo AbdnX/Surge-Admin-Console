@@ -11,7 +11,7 @@ import type {
 } from '../lib/api';
 
 // ---------------------------------------------------------------------------
-// Primitives — matches app-wide patterns
+// Primitives
 // ---------------------------------------------------------------------------
 
 function Toast({ msg, ok, onDismiss }: { msg: string; ok: boolean; onDismiss: () => void }) {
@@ -24,15 +24,7 @@ function Toast({ msg, ok, onDismiss }: { msg: string; ok: boolean; onDismiss: ()
 }
 
 function Label({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{children}</p>;
-}
-
-function SectionTitle({ children }: { children: ReactNode }) {
-  return <p className="text-[13px] font-bold text-[#0F172A] mb-0.5">{children}</p>;
-}
-
-function SectionDesc({ children }: { children: ReactNode }) {
-  return <p className="text-[12px] text-[#64748B] mb-4">{children}</p>;
+  return <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{children}</p>;
 }
 
 function SaveBtn({ onClick, saving, disabled = false }: { onClick: () => void; saving: boolean; disabled?: boolean }) {
@@ -49,13 +41,13 @@ function SaveBtn({ onClick, saving, disabled = false }: { onClick: () => void; s
 }
 
 const TH = ({ children, right }: { children: ReactNode; right?: boolean }) => (
-  <th className={`px-4 py-2.5 text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider ${right ? 'text-right' : 'text-left'}`}>
+  <th className={`px-5 py-3 text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest ${right ? 'text-right' : 'text-left'}`}>
     {children}
   </th>
 );
 
 const TD = ({ children, right, mono }: { children: ReactNode; right?: boolean; mono?: boolean }) => (
-  <td className={`px-4 py-3 text-[13px] text-[#0F172A] ${right ? 'text-right' : ''} ${mono ? 'font-mono' : ''}`}>
+  <td className={`px-5 py-3 text-[13px] text-[#0F172A] ${right ? 'text-right' : ''} ${mono ? 'font-mono' : ''}`}>
     {children}
   </td>
 );
@@ -64,6 +56,24 @@ const numInput = 'w-24 text-right border border-[#E2E8F0] rounded-lg px-2 py-1.5
 
 const TIERS = ['Surge Starter', 'Surge Bronze', 'Surge Silver', 'Surge Gold', 'Surge Elite'];
 const GATED_TIERS = ['Surge Bronze', 'Surge Silver', 'Surge Gold', 'Surge Elite'];
+
+// Card wrapper matching MerchantsPage section style
+function SectionCard({ title, subtitle, children, action }: {
+  title: string; subtitle?: string; children: ReactNode; action?: ReactNode;
+}) {
+  return (
+    <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[13px] font-bold text-[#0F172A]">{title}</p>
+          {subtitle && <p className="text-[12px] text-[#64748B] mt-0.5">{subtitle}</p>}
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Tab components
@@ -85,121 +95,119 @@ function ScoreTab({
   const valid = total === 1000;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Score Components */}
-      <div>
-        <SectionTitle>Score Components</SectionTitle>
-        <SectionDesc>Positive signals that contribute to the Surge Score. Enabled components must sum to exactly 1,000.</SectionDesc>
-        <div className="bg-white border border-[#F1F5F9] rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
-              <tr>
-                <TH>Component</TH>
-                <TH>Type</TH>
-                <TH right>Max Points</TH>
-                <TH right>Enabled</TH>
+      <SectionCard
+        title="Score Components"
+        subtitle="Positive signals that contribute to the Surge Score. Enabled components must sum to exactly 1,000."
+      >
+        <table className="w-full">
+          <thead className="bg-[#F8FAFC]">
+            <tr>
+              <TH>Component</TH>
+              <TH>Type</TH>
+              <TH right>Max Points</TH>
+              <TH right>Enabled</TH>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F1F5F9]">
+            {scoreComponents.map((c, i) => (
+              <tr key={c.key} className="hover:bg-[#FAFAFA]">
+                <TD><span className="font-semibold">{c.label}</span></TD>
+                <TD>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#64748B] uppercase tracking-wide">
+                    {c.type}
+                  </span>
+                </TD>
+                <TD right>
+                  <input
+                    type="number" min={0} max={1000} value={c.max_points}
+                    onChange={e => {
+                      const updated = [...scoreComponents];
+                      updated[i] = { ...c, max_points: Number(e.target.value) };
+                      setScoreComponents(updated);
+                    }}
+                    className={numInput}
+                  />
+                </TD>
+                <TD right>
+                  <input
+                    type="checkbox" checked={c.enabled}
+                    onChange={e => {
+                      const updated = [...scoreComponents];
+                      updated[i] = { ...c, enabled: e.target.checked };
+                      setScoreComponents(updated);
+                    }}
+                    className="accent-[#0F172A] w-4 h-4"
+                  />
+                </TD>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {scoreComponents.map((c, i) => (
-                <tr key={c.key} className="hover:bg-[#FAFAFA]">
-                  <TD><span className="font-semibold">{c.label}</span></TD>
-                  <TD>
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#64748B] uppercase tracking-wide">
-                      {c.type}
-                    </span>
-                  </TD>
-                  <TD right>
-                    <input
-                      type="number" min={0} max={1000} value={c.max_points}
-                      onChange={e => {
-                        const updated = [...scoreComponents];
-                        updated[i] = { ...c, max_points: Number(e.target.value) };
-                        setScoreComponents(updated);
-                      }}
-                      className={numInput}
-                    />
-                  </TD>
-                  <TD right>
-                    <input
-                      type="checkbox" checked={c.enabled}
-                      onChange={e => {
-                        const updated = [...scoreComponents];
-                        updated[i] = { ...c, enabled: e.target.checked };
-                        setScoreComponents(updated);
-                      }}
-                      className="accent-[#0F172A] w-4 h-4"
-                    />
-                  </TD>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className={`border-t-2 ${valid ? 'border-[#BBF7D0] bg-[#F0FDF4]' : 'border-[#FECACA] bg-[#FFF1F2]'}`}>
-                <td colSpan={2} className="px-4 py-2.5 text-[13px] font-bold text-[#0F172A]">
-                  Total (enabled)
-                </td>
-                <td className={`px-4 py-2.5 text-right text-[13px] font-bold ${valid ? 'text-[#16A34A]' : 'text-[#E11D48]'}`}>
-                  {total} / 1,000
-                </td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className={`border-t-2 ${valid ? 'border-[#BBF7D0] bg-[#F0FDF4]' : 'border-[#FECACA] bg-[#FFF1F2]'}`}>
+              <td colSpan={2} className="px-5 py-2.5 text-[13px] font-bold text-[#0F172A]">
+                Total (enabled)
+              </td>
+              <td className={`px-5 py-2.5 text-right text-[13px] font-bold ${valid ? 'text-[#16A34A]' : 'text-[#E11D48]'}`}>
+                {total} / 1,000
+              </td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
         {!valid && (
-          <div className="flex items-center gap-1.5 mt-2 text-[12px] text-[#E11D48]">
+          <div className="flex items-center gap-1.5 px-5 py-3 text-[12px] text-[#E11D48] border-t border-[#FECACA] bg-[#FFF1F2]">
             <AlertCircle size={12} />
             Enabled components must sum to exactly 1,000 before you can save.
           </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Penalty Components */}
-      <div>
-        <SectionTitle>Penalty Components</SectionTitle>
-        <SectionDesc>Negative signals applied per event. Points per event can be negative (deductions) or positive (recovery bonuses).</SectionDesc>
-        <div className="bg-white border border-[#F1F5F9] rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
-              <tr>
-                <TH>Penalty</TH>
-                <TH right>Points per Event</TH>
-                <TH right>Enabled</TH>
+      <SectionCard
+        title="Penalty Components"
+        subtitle="Applied per event. Negative values are deductions; positive values are recovery bonuses."
+      >
+        <table className="w-full">
+          <thead className="bg-[#F8FAFC]">
+            <tr>
+              <TH>Penalty</TH>
+              <TH right>Points per Event</TH>
+              <TH right>Enabled</TH>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F1F5F9]">
+            {penaltyComponents.map((p, i) => (
+              <tr key={p.key} className="hover:bg-[#FAFAFA]">
+                <TD><span className="font-semibold">{p.label}</span></TD>
+                <TD right>
+                  <input
+                    type="number" value={p.points_per_unit}
+                    onChange={e => {
+                      const updated = [...penaltyComponents];
+                      updated[i] = { ...p, points_per_unit: Number(e.target.value) };
+                      setPenaltyComponents(updated);
+                    }}
+                    className={numInput}
+                  />
+                </TD>
+                <TD right>
+                  <input
+                    type="checkbox" checked={p.enabled}
+                    onChange={e => {
+                      const updated = [...penaltyComponents];
+                      updated[i] = { ...p, enabled: e.target.checked };
+                      setPenaltyComponents(updated);
+                    }}
+                    className="accent-[#0F172A] w-4 h-4"
+                  />
+                </TD>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {penaltyComponents.map((p, i) => (
-                <tr key={p.key} className="hover:bg-[#FAFAFA]">
-                  <TD><span className="font-semibold">{p.label}</span></TD>
-                  <TD right>
-                    <input
-                      type="number" value={p.points_per_unit}
-                      onChange={e => {
-                        const updated = [...penaltyComponents];
-                        updated[i] = { ...p, points_per_unit: Number(e.target.value) };
-                        setPenaltyComponents(updated);
-                      }}
-                      className={numInput}
-                    />
-                  </TD>
-                  <TD right>
-                    <input
-                      type="checkbox" checked={p.enabled}
-                      onChange={e => {
-                        const updated = [...penaltyComponents];
-                        updated[i] = { ...p, enabled: e.target.checked };
-                        setPenaltyComponents(updated);
-                      }}
-                      className="accent-[#0F172A] w-4 h-4"
-                    />
-                  </TD>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
 
       <SaveBtn onClick={onSave} saving={saving} disabled={!valid} />
     </div>
@@ -215,51 +223,50 @@ function TiersTab({
   saving: boolean;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <SectionTitle>Tier Score Thresholds</SectionTitle>
-        <SectionDesc>The score range that maps a consumer to each trust tier. Changes apply to all future score evaluations.</SectionDesc>
-        <div className="bg-white border border-[#F1F5F9] rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
-              <tr>
-                <TH>Tier</TH>
-                <TH right>Floor (min score)</TH>
-                <TH right>Ceiling (max score)</TH>
+    <div className="space-y-5">
+      <SectionCard
+        title="Tier Score Thresholds"
+        subtitle="The score range that maps a consumer to each trust tier. Changes apply to all future score evaluations."
+      >
+        <table className="w-full">
+          <thead className="bg-[#F8FAFC]">
+            <tr>
+              <TH>Tier</TH>
+              <TH right>Floor (min score)</TH>
+              <TH right>Ceiling (max score)</TH>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F1F5F9]">
+            {tierThresholds.map((t, i) => (
+              <tr key={t.tier} className="hover:bg-[#FAFAFA]">
+                <TD><span className="font-semibold">{t.tier}</span></TD>
+                <TD right>
+                  <input
+                    type="number" value={t.floor}
+                    onChange={e => {
+                      const updated = [...tierThresholds];
+                      updated[i] = { ...t, floor: Number(e.target.value) };
+                      setTierThresholds(updated);
+                    }}
+                    className={numInput}
+                  />
+                </TD>
+                <TD right>
+                  <input
+                    type="number" value={t.ceiling}
+                    onChange={e => {
+                      const updated = [...tierThresholds];
+                      updated[i] = { ...t, ceiling: Number(e.target.value) };
+                      setTierThresholds(updated);
+                    }}
+                    className={numInput}
+                  />
+                </TD>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {tierThresholds.map((t, i) => (
-                <tr key={t.tier} className="hover:bg-[#FAFAFA]">
-                  <TD><span className="font-semibold">{t.tier}</span></TD>
-                  <TD right>
-                    <input
-                      type="number" value={t.floor}
-                      onChange={e => {
-                        const updated = [...tierThresholds];
-                        updated[i] = { ...t, floor: Number(e.target.value) };
-                        setTierThresholds(updated);
-                      }}
-                      className={numInput}
-                    />
-                  </TD>
-                  <TD right>
-                    <input
-                      type="number" value={t.ceiling}
-                      onChange={e => {
-                        const updated = [...tierThresholds];
-                        updated[i] = { ...t, ceiling: Number(e.target.value) };
-                        setTierThresholds(updated);
-                      }}
-                      className={numInput}
-                    />
-                  </TD>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
       <SaveBtn onClick={onSave} saving={saving} />
     </div>
   );
@@ -268,41 +275,40 @@ function TiersTab({
 function GatesTab({ record }: { record: DecisionEngineRecord }) {
   return (
     <div className="space-y-4">
-      <div>
-        <SectionTitle>Tier Gate Requirements</SectionTitle>
-        <SectionDesc>Hard requirements a consumer must satisfy to hold a tier, regardless of their score. Currently managed via API.</SectionDesc>
-      </div>
+      <p className="text-[13px] text-[#64748B]">
+        Hard requirements a consumer must satisfy to hold a tier, regardless of their score.
+        Gate editing is available via the Decision Engine API — a full UI editor is planned.
+      </p>
       {GATED_TIERS.map(tier => {
         const gates = record.config.tier_gates?.[tier] ?? [];
         return (
-          <div key={tier} className="bg-white border border-[#F1F5F9] rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[14px] font-bold text-[#0F172A]">{tier}</p>
-              {gates.length === 0
-                ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[#94A3B8] uppercase tracking-wide">No gates</span>
-                : <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F0FDF4] text-[#16A34A] uppercase tracking-wide">{gates.length} gate{gates.length !== 1 ? 's' : ''} active</span>
-              }
+          <SectionCard
+            key={tier}
+            title={tier}
+            action={gates.length === 0
+              ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[#94A3B8] uppercase tracking-wide">No gates</span>
+              : <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F0FDF4] text-[#16A34A] uppercase tracking-wide">{gates.length} gate{gates.length !== 1 ? 's' : ''} active</span>
+            }
+          >
+            <div className="p-5">
+              {gates.length === 0 ? (
+                <p className="text-[13px] text-[#94A3B8]">All consumers who reach this score range are assigned this tier.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {gates.map((g, i) => (
+                    <li key={i} className="flex items-center gap-2.5 text-[13px]">
+                      <CheckCircle2 size={14} className="text-[#16A34A] shrink-0" />
+                      <span className="font-mono text-[#475569]">{g.condition}</span>
+                      <span className="text-[#CBD5E1]">→</span>
+                      <span className="text-[#0F172A] font-semibold">{String(g.value)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            {gates.length === 0 ? (
-              <p className="text-[12px] text-[#94A3B8]">All consumers who reach this score range are assigned this tier.</p>
-            ) : (
-              <ul className="space-y-2">
-                {gates.map((g, i) => (
-                  <li key={i} className="flex items-center gap-2.5 text-[13px]">
-                    <CheckCircle2 size={14} className="text-[#16A34A] shrink-0" />
-                    <span className="font-mono text-[#475569]">{g.condition}</span>
-                    <span className="text-[#CBD5E1]">→</span>
-                    <span className="text-[#0F172A] font-semibold">{String(g.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          </SectionCard>
         );
       })}
-      <p className="text-[12px] text-[#94A3B8] pt-1">
-        Gate editing is available via the Decision Engine API. A full UI editor is planned for the next release.
-      </p>
     </div>
   );
 }
@@ -316,16 +322,13 @@ function EligibilityTab({
   saving: boolean;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
       {/* Platform minimum score */}
-      <div className="bg-white border border-[#F1F5F9] rounded-2xl p-5">
-        <div className="flex items-center justify-between">
+      <SectionCard
+        title="Platform Minimum Score"
+        action={
           <div>
-            <SectionTitle>Platform Minimum Score</SectionTitle>
-            <p className="text-[12px] text-[#64748B]">Consumers below this score are hard-blocked from purchasing anywhere, regardless of merchant settings.</p>
-          </div>
-          <div className="ml-6 shrink-0">
             <Label>Min Score</Label>
             <input
               type="number"
@@ -334,98 +337,104 @@ function EligibilityTab({
               className={numInput}
             />
           </div>
+        }
+      >
+        <div className="px-5 py-4">
+          <p className="text-[13px] text-[#64748B]">
+            Consumers below this score are hard-blocked from purchasing anywhere, regardless of merchant settings.
+          </p>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Surge-backed override */}
-      <div className="bg-white border border-[#F1F5F9] rounded-2xl p-5">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex-1">
-            <SectionTitle>Surge-Backed Purchase Minimum</SectionTitle>
-            <p className="text-[12px] text-[#64748B]">
-              When enabled, Surge enforces a company-wide minimum tier on top of the merchant's own setting.
-              A merchant accepting Starter consumers cannot override this floor when Surge is bearing the risk.
-            </p>
+      <SectionCard
+        title="Surge-Backed Purchase Minimum"
+        action={
+          <div className="flex items-center gap-2.5">
+            <span className="text-[12px] text-[#64748B] font-medium">
+              {eligibility.surge_backed_enabled ? 'Enabled' : 'Disabled'}
+            </span>
+            <button
+              onClick={() => setEligibility({ ...eligibility, surge_backed_enabled: !eligibility.surge_backed_enabled })}
+              className={`relative w-10 h-5 rounded-full transition-colors ${eligibility.surge_backed_enabled ? 'bg-[#0F172A]' : 'bg-[#CBD5E1]'}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${eligibility.surge_backed_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
           </div>
-          <div className="shrink-0 flex flex-col items-end gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-[12px] text-[#64748B] font-medium">{eligibility.surge_backed_enabled ? 'Enabled' : 'Disabled'}</span>
-              <button
-                onClick={() => setEligibility({ ...eligibility, surge_backed_enabled: !eligibility.surge_backed_enabled })}
-                className={`relative w-10 h-5 rounded-full transition-colors ${eligibility.surge_backed_enabled ? 'bg-[#0F172A]' : 'bg-[#CBD5E1]'}`}
-              >
-                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${eligibility.surge_backed_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
-              </button>
-            </div>
-            <div>
-              <Label>Minimum Tier</Label>
-              <select
-                value={eligibility.surge_backed_min_tier}
-                disabled={!eligibility.surge_backed_enabled}
-                onChange={e => setEligibility({ ...eligibility, surge_backed_min_tier: e.target.value })}
-                className="border border-[#E2E8F0] rounded-lg px-3 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
+        }
+      >
+        <div className="px-5 py-4 flex items-center justify-between gap-6">
+          <p className="text-[13px] text-[#64748B]">
+            When enabled, Surge enforces a company-wide minimum tier on top of the merchant's own setting.
+            A merchant accepting Starter consumers cannot override this floor when Surge is bearing the risk.
+          </p>
+          <div className="shrink-0">
+            <Label>Minimum Tier</Label>
+            <select
+              value={eligibility.surge_backed_min_tier}
+              disabled={!eligibility.surge_backed_enabled}
+              onChange={e => setEligibility({ ...eligibility, surge_backed_min_tier: e.target.value })}
+              className="border border-[#E2E8F0] rounded-lg px-3 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Tier limits */}
-      <div>
-        <SectionTitle>Tier Purchase Limits</SectionTitle>
-        <SectionDesc>Cap how many active plans a consumer can hold and the maximum single purchase amount per tier. Leave blank for unlimited.</SectionDesc>
-        <div className="bg-white border border-[#F1F5F9] rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
-              <tr>
-                <TH>Tier</TH>
-                <TH right>Max Concurrent Plans</TH>
-                <TH right>Max Purchase Amount (₦)</TH>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {TIERS.map(tier => {
-                const limits = eligibility.tier_limits?.[tier] ?? { max_concurrent_plans: null, max_purchase_amount: null };
-                return (
-                  <tr key={tier} className="hover:bg-[#FAFAFA]">
-                    <TD><span className="font-semibold">{tier}</span></TD>
-                    <TD right>
-                      <input
-                        type="number" min={1} placeholder="Unlimited"
-                        value={limits.max_concurrent_plans ?? ''}
-                        onChange={e => setEligibility({
-                          ...eligibility,
-                          tier_limits: {
-                            ...eligibility.tier_limits,
-                            [tier]: { ...limits, max_concurrent_plans: e.target.value === '' ? null : Number(e.target.value) },
-                          },
-                        })}
-                        className="w-32 text-right border border-[#E2E8F0] rounded-lg px-2 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white placeholder:text-[#CBD5E1]"
-                      />
-                    </TD>
-                    <TD right>
-                      <input
-                        type="number" min={0} placeholder="Unlimited"
-                        value={limits.max_purchase_amount ?? ''}
-                        onChange={e => setEligibility({
-                          ...eligibility,
-                          tier_limits: {
-                            ...eligibility.tier_limits,
-                            [tier]: { ...limits, max_purchase_amount: e.target.value === '' ? null : Number(e.target.value) },
-                          },
-                        })}
-                        className="w-36 text-right border border-[#E2E8F0] rounded-lg px-2 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white placeholder:text-[#CBD5E1]"
-                      />
-                    </TD>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <SectionCard
+        title="Tier Purchase Limits"
+        subtitle="Cap how many active plans a consumer can hold and the maximum single purchase amount per tier. Leave blank for unlimited."
+      >
+        <table className="w-full">
+          <thead className="bg-[#F8FAFC]">
+            <tr>
+              <TH>Tier</TH>
+              <TH right>Max Concurrent Plans</TH>
+              <TH right>Max Purchase Amount (₦)</TH>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F1F5F9]">
+            {TIERS.map(tier => {
+              const limits = eligibility.tier_limits?.[tier] ?? { max_concurrent_plans: null, max_purchase_amount: null };
+              return (
+                <tr key={tier} className="hover:bg-[#FAFAFA]">
+                  <TD><span className="font-semibold">{tier}</span></TD>
+                  <TD right>
+                    <input
+                      type="number" min={1} placeholder="Unlimited"
+                      value={limits.max_concurrent_plans ?? ''}
+                      onChange={e => setEligibility({
+                        ...eligibility,
+                        tier_limits: {
+                          ...eligibility.tier_limits,
+                          [tier]: { ...limits, max_concurrent_plans: e.target.value === '' ? null : Number(e.target.value) },
+                        },
+                      })}
+                      className="w-32 text-right border border-[#E2E8F0] rounded-lg px-2 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white placeholder:text-[#CBD5E1]"
+                    />
+                  </TD>
+                  <TD right>
+                    <input
+                      type="number" min={0} placeholder="Unlimited"
+                      value={limits.max_purchase_amount ?? ''}
+                      onChange={e => setEligibility({
+                        ...eligibility,
+                        tier_limits: {
+                          ...eligibility.tier_limits,
+                          [tier]: { ...limits, max_purchase_amount: e.target.value === '' ? null : Number(e.target.value) },
+                        },
+                      })}
+                      className="w-36 text-right border border-[#E2E8F0] rounded-lg px-2 py-1.5 text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white placeholder:text-[#CBD5E1]"
+                    />
+                  </TD>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </SectionCard>
 
       <SaveBtn onClick={onSave} saving={saving} />
     </div>
@@ -437,9 +446,9 @@ function HistoryTab({ history }: { history: DecisionEngineHistoryItem[] }) {
     return <p className="text-[13px] text-[#94A3B8]">No history yet.</p>;
   }
   return (
-    <div className="bg-white border border-[#F1F5F9] rounded-2xl overflow-hidden">
+    <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
       <table className="w-full">
-        <thead className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
+        <thead className="bg-[#F8FAFC]">
           <tr>
             <TH>Version</TH>
             <TH>Summary</TH>
@@ -471,7 +480,7 @@ function HistoryTab({ history }: { history: DecisionEngineHistoryItem[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </section>
   );
 }
 
@@ -482,7 +491,7 @@ function HistoryTab({ history }: { history: DecisionEngineHistoryItem[] }) {
 type PageTab = 'score' | 'tiers' | 'gates' | 'eligibility' | 'history';
 
 const TABS: { id: PageTab; label: string }[] = [
-  { id: 'score',       label: 'Score Config'   },
+  { id: 'score',       label: 'Score Config'    },
   { id: 'tiers',       label: 'Tier Thresholds' },
   { id: 'gates',       label: 'Tier Gates'      },
   { id: 'eligibility', label: 'Eligibility'     },
@@ -604,7 +613,7 @@ export default function DecisionEnginePage() {
           </p>
         </div>
         {record && (
-          <div className="flex items-center gap-2 shrink-0 ml-6 bg-[#F8FAFC] border border-[#F1F5F9] rounded-xl px-4 py-2.5">
+          <div className="flex items-center gap-2 shrink-0 ml-6 bg-[#F8FAFC] border border-[#E8ECF0] rounded-xl px-4 py-2.5">
             <Clock size={13} className="text-[#94A3B8]" />
             <span className="text-[12px] text-[#64748B]">Active config</span>
             <span className="text-[13px] font-black text-[#0F172A]">v{record.version}</span>

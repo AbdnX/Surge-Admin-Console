@@ -63,7 +63,7 @@ function Toast({ msg, ok, onDismiss }: { msg: string; ok: boolean; onDismiss: ()
 // ---------------------------------------------------------------------------
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{children}</p>;
+  return <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{children}</p>;
 }
 
 function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -102,7 +102,7 @@ function PriorityChain() {
   };
 
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 mb-6">
+    <div className="bg-white border border-[#E8ECF0] rounded-2xl p-6 mb-6">
       <p className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest mb-4">How fee resolution works</p>
       <div className="flex items-stretch gap-0">
         {steps.map((s, i) => {
@@ -567,7 +567,7 @@ function RulesTab({
           </button>
         </div>
         {groupConfigs.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#E2E8F0] rounded-2xl px-6 py-10 text-center">
+          <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-10 text-center">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
               <Users size={18} className="text-blue-400" />
             </div>
@@ -577,7 +577,7 @@ function RulesTab({
         ) : (
           <div className="grid gap-3">
             {groupConfigs.map(cfg => (
-              <div key={cfg.id} className="bg-white border border-[#E2E8F0] rounded-xl px-5 py-4 flex items-center justify-between">
+              <div key={cfg.id} className="bg-white border border-[#E8ECF0] rounded-xl px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                     <Users size={15} className="text-blue-600" />
@@ -630,7 +630,7 @@ function RulesTab({
           </button>
         </div>
         {merchantConfigs.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#E2E8F0] rounded-2xl px-6 py-10 text-center">
+          <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-10 text-center">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
               <Building2 size={18} className="text-emerald-400" />
             </div>
@@ -638,7 +638,7 @@ function RulesTab({
             <p className="text-[12px] text-[#94A3B8] mt-1">Add a merchant-specific rate for bespoke pricing arrangements.</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+          <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-[#F8FAFC]">
@@ -679,7 +679,7 @@ function RulesTab({
       {/* All merchants resolved rate */}
       <div>
         <p className="text-[13px] font-bold text-[#0F172A] mb-3">Effective Rate per Merchant</p>
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+        <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-[#F8FAFC]">
@@ -753,7 +753,7 @@ function GroupsTab({
       </div>
 
       {groups.length === 0 ? (
-        <div className="bg-white border border-dashed border-[#E2E8F0] rounded-2xl px-6 py-16 text-center">
+        <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-16 text-center">
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
             <Users size={22} className="text-blue-400" />
           </div>
@@ -771,7 +771,7 @@ function GroupsTab({
             const members = merchants.filter(m => m.fee_group_id === g.id);
             const open    = openGroupId === g.id;
             return (
-              <div key={g.id} className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+              <div key={g.id} className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
                 {/* Group header */}
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-4">
@@ -847,7 +847,7 @@ function GroupsTab({
           <p className="text-[12px] font-bold text-[#94A3B8] uppercase tracking-widest mb-3">
             Unassigned Merchants — using Global Default
           </p>
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+          <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
             <div className="divide-y divide-[#F1F5F9]">
               {unassigned.map(m => (
                 <div key={m.id} className="flex items-center justify-between px-5 py-3">
@@ -897,7 +897,7 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+      <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
         <div className="px-8 pt-8 pb-6 border-b border-[#F1F5F9]">
           <div className="flex items-center gap-2 mb-1">
             <Calculator size={16} className="text-[#64748B]" />
