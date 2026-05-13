@@ -35,6 +35,7 @@ export interface Merchant {
   flex_settings: Record<string, unknown> | null;
   created_at: string;
   api_key_enabled: boolean;
+  fee_group_id: string | null;
 }
 
 export interface Customer {
@@ -164,6 +165,51 @@ export interface DelinquencyCase {
   next_retry_at?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Fee configuration types
+// ---------------------------------------------------------------------------
+
+export type FeeScope = 'global' | 'group' | 'merchant';
+export type FeeType  = 'percentage' | 'flat' | 'mixed';
+
+export interface FeeGroup {
+  id:          string;
+  name:        string;
+  description: string | null;
+  created_at:  string;
+  updated_at:  string;
+}
+
+export interface FeeConfig {
+  id:              string;
+  name:            string;
+  scope:           FeeScope;
+  merchant_id:     string | null;
+  group_id:        string | null;
+  fee_type:        FeeType;
+  percentage_rate: number | null;
+  flat_amount:     number | null;
+  min_fee:         number | null;
+  max_fee:         number | null;
+  is_active:       boolean;
+  effective_from:  string | null;
+  effective_until: string | null;
+  created_at:      string;
+  updated_at:      string;
+}
+
+export interface FeeCalculationResult {
+  merchant_id:        string | null;
+  resolved_config_id: string;
+  resolved_scope:     FeeScope;
+  config_name:        string;
+  gross_amount:       number;
+  fee_amount:         number;
+  merchant_payable:   number;
+  currency:           string;
+  effective_rate_pct: number;
+}
+
 export const api = {
   merchants: {
     list: (status?: string) =>
@@ -286,10 +332,56 @@ export const api = {
       req<{ ok: boolean; delivered: boolean }>('POST', `/webhooks/events/${eventId}/replay`),
   },
   auth: {
-    login: (password: string) => 
-      req<{ ok: boolean; data: { token: string; userId: string } }>('POST', '/auth/login', { 
-        email: 'admin@flex.com', 
-        password 
+    login: (password: string) =>
+      req<{ ok: boolean; data: { token: string; userId: string } }>('POST', '/auth/login', {
+        email: 'admin@flex.com',
+        password
       })
-  }
+  },
+  feeGroups: {
+    list: () =>
+      req<{ data: FeeGroup[]; total: number }>('GET', '/admin/fee-groups'),
+    get: (groupId: string) =>
+      req<{ ok: boolean; data: FeeGroup }>('GET', `/admin/fee-groups/${groupId}`),
+    create: (data: { name: string; description?: string }) =>
+      req<{ ok: boolean; data: FeeGroup }>('POST', '/admin/fee-groups', data),
+    update: (groupId: string, data: { name?: string; description?: string }) =>
+      req<{ ok: boolean; data: FeeGroup }>('PUT', `/admin/fee-groups/${groupId}`, data),
+    delete: (groupId: string) =>
+      fetch(`${BASE}/admin/fee-groups/${groupId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('flex_admin_token') ?? ''}` },
+      }).then(r => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
+  },
+  feeConfigs: {
+    list: (params?: { scope?: FeeScope; merchant_id?: string; group_id?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.scope)       qs.append('scope', params.scope);
+      if (params?.merchant_id) qs.append('merchant_id', params.merchant_id);
+      if (params?.group_id)    qs.append('group_id', params.group_id);
+      const url = `/admin/fee-configs${qs.toString() ? `?${qs}` : ''}`;
+      return req<{ data: FeeConfig[]; total: number }>('GET', url);
+    },
+    get: (configId: string) =>
+      req<{ ok: boolean; data: FeeConfig }>('GET', `/admin/fee-configs/${configId}`),
+    create: (data: Partial<FeeConfig> & { name: string; scope: FeeScope; fee_type: FeeType }) =>
+      req<{ ok: boolean; data: FeeConfig }>('POST', '/admin/fee-configs', data),
+    update: (configId: string, data: Partial<FeeConfig>) =>
+      req<{ ok: boolean; data: FeeConfig }>('PUT', `/admin/fee-configs/${configId}`, data),
+    delete: (configId: string) =>
+      fetch(`${BASE}/admin/fee-configs/${configId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('flex_admin_token') ?? ''}` },
+      }).then(r => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
+    resolve: (merchantId: string) =>
+      req<{ ok: boolean; data: FeeConfig }>('GET', `/admin/fee-configs/resolve/${merchantId}`),
+    preview: (amount: number, merchantId?: string, currency = 'NGN') =>
+      req<{ ok: boolean; data: FeeCalculationResult }>('POST', '/admin/fee-configs/preview', {
+        amount, merchant_id: merchantId ?? null, currency,
+      }),
+    assignMerchantGroup: (merchantId: string, groupId: string | null) =>
+      req<{ ok: boolean; data: { merchant_id: string; fee_group_id: string | null } }>(
+        'PUT', `/admin/merchants/${merchantId}/fee-group`, { group_id: groupId }
+      ),
+  },
 };
