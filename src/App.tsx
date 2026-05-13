@@ -1,6 +1,6 @@
 import { Component, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight, LayoutDashboard, Webhook, Calendar, Landmark, Percent } from 'lucide-react';
+import { Eye, EyeOff, Zap, Users, Building2, AlertTriangle, LogOut, ChevronRight, ArrowLeftRight, LayoutDashboard, Webhook, Calendar, Landmark, Percent, ShieldCheck } from 'lucide-react';
 import { api } from './lib/api';
 import MerchantsPage from './pages/MerchantsPage';
 import CustomersPage from './pages/CustomersPage';
@@ -11,6 +11,7 @@ import WebhooksPage from './pages/WebhooksPage';
 import SchedulingPage from './pages/SchedulingPage';
 import SettlementPage from './pages/SettlementPage';
 import FeeConfigPage from './pages/FeeConfigPage';
+import DecisionEnginePage from './pages/DecisionEnginePage';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -37,18 +38,19 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 const AUTH_KEY = 'flex_admin_authed';
-type Tab = 'overview' | 'merchants' | 'customers' | 'delinquency' | 'transactions' | 'webhooks' | 'scheduling' | 'settlement' | 'fees';
+type Tab = 'overview' | 'merchants' | 'customers' | 'delinquency' | 'transactions' | 'webhooks' | 'scheduling' | 'settlement' | 'fees' | 'decision-engine';
 
 const NAV: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: 'overview',     label: 'Overview',     icon: LayoutDashboard, desc: 'Platform snapshot'        },
-  { id: 'merchants',    label: 'Merchants',    icon: Building2,       desc: 'Manage merchant accounts' },
-  { id: 'customers',    label: 'Customers',    icon: Users,           desc: 'View consumer profiles'   },
-  { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight,  desc: 'All payment plans'        },
-  { id: 'delinquency',  label: 'Delinquency',  icon: AlertTriangle,   desc: 'Monitor overdue cases'    },
-  { id: 'webhooks',     label: 'Webhooks',     icon: Webhook,         desc: 'Delivery monitor & DLQ'   },
-  { id: 'scheduling',   label: 'Scheduling',   icon: Calendar,        desc: 'Auto-debit jobs'          },
-  { id: 'settlement',   label: 'Settlement',   icon: Landmark,        desc: 'Payout ledger'            },
-  { id: 'fees',         label: 'Fee Config',   icon: Percent,         desc: 'Pricing rules & overrides' },
+  { id: 'overview',         label: 'Overview',         icon: LayoutDashboard, desc: 'Platform snapshot'           },
+  { id: 'merchants',        label: 'Merchants',        icon: Building2,       desc: 'Manage merchant accounts'    },
+  { id: 'customers',        label: 'Customers',        icon: Users,           desc: 'View consumer profiles'      },
+  { id: 'transactions',     label: 'Transactions',     icon: ArrowLeftRight,  desc: 'All payment plans'           },
+  { id: 'delinquency',      label: 'Delinquency',      icon: AlertTriangle,   desc: 'Monitor overdue cases'       },
+  { id: 'webhooks',         label: 'Webhooks',         icon: Webhook,         desc: 'Delivery monitor & DLQ'      },
+  { id: 'scheduling',       label: 'Scheduling',       icon: Calendar,        desc: 'Auto-debit jobs'             },
+  { id: 'settlement',       label: 'Settlement',       icon: Landmark,        desc: 'Payout ledger'               },
+  { id: 'fees',             label: 'Fee Config',       icon: Percent,         desc: 'Pricing rules & overrides'   },
+  { id: 'decision-engine',  label: 'Decision Engine',  icon: ShieldCheck,     desc: 'Scoring & eligibility rules' },
 ];
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
@@ -247,7 +249,8 @@ export default function App() {
             {tab === 'webhooks'     && <WebhooksPage />}
             {tab === 'scheduling'   && <SchedulingPage />}
             {tab === 'settlement'   && <SettlementPage />}
-            {tab === 'fees'         && <FeeConfigPage />}
+            {tab === 'fees'            && <FeeConfigPage />}
+            {tab === 'decision-engine' && <DecisionEnginePage />}
           </main>
         </div>
 

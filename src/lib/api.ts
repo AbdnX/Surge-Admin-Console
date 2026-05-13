@@ -210,6 +210,102 @@ export interface FeeCalculationResult {
   effective_rate_pct: number;
 }
 
+// ---------------------------------------------------------------------------
+// Decision Engine types
+// ---------------------------------------------------------------------------
+
+export interface ScoreComponent {
+  key: string;
+  label: string;
+  max_points: number;
+  enabled: boolean;
+  type: string;
+  points_per_unit?: number;
+  unit_cap?: number;
+}
+
+export interface PenaltyComponent {
+  key: string;
+  label: string;
+  points_per_unit: number;
+  enabled: boolean;
+}
+
+export interface TierThreshold {
+  tier: string;
+  floor: number;
+  ceiling: number;
+}
+
+export interface TierGateCondition {
+  condition: string;
+  value: unknown;
+  label?: string;
+}
+
+export interface TierLimit {
+  max_concurrent_plans: number | null;
+  max_purchase_amount:  number | null;
+}
+
+export interface EligibilityRules {
+  platform_min_score:    number;
+  blocked_tiers:         string[];
+  surge_backed_enabled:  boolean;
+  surge_backed_min_tier: string;
+  tier_limits:           Record<string, TierLimit>;
+}
+
+export interface DecisionEngineConfig {
+  score_components:   ScoreComponent[];
+  penalty_components: PenaltyComponent[];
+  score_bounds:       { min: number; max: number };
+  tier_thresholds:    TierThreshold[];
+  tier_gates:         Record<string, TierGateCondition[]>;
+  eligibility_rules:  EligibilityRules;
+}
+
+export interface DecisionEngineRecord {
+  id:             string | null;
+  version:        number;
+  is_active:      boolean;
+  config:         DecisionEngineConfig;
+  created_by:     string;
+  created_at:     string;
+  change_summary: string | null;
+}
+
+export interface DecisionEngineHistoryItem {
+  id:             string | null;
+  version:        number;
+  is_active:      boolean;
+  created_by:     string;
+  created_at:     string;
+  change_summary: string | null;
+}
+
+export interface UpdateScorePayload {
+  score_components:   ScoreComponent[];
+  penalty_components: PenaltyComponent[];
+  score_bounds:       { min: number; max: number };
+  change_summary:     string;
+}
+
+export interface UpdateTiersPayload {
+  tier_thresholds: TierThreshold[];
+  change_summary:  string;
+}
+
+export interface UpdateGatesPayload {
+  tier_gates:     Record<string, TierGateCondition[]>;
+  change_summary: string;
+}
+
+export interface UpdateEligibilityPayload {
+  eligibility_rules: EligibilityRules;
+  change_summary:    string;
+}
+
 export const api = {
   merchants: {
     list: (status?: string) =>
@@ -383,5 +479,20 @@ export const api = {
       req<{ ok: boolean; data: { merchant_id: string; fee_group_id: string | null } }>(
         'PUT', `/admin/merchants/${merchantId}/fee-group`, { group_id: groupId }
       ),
+  },
+
+  decisionEngine: {
+    getConfig: () =>
+      req<DecisionEngineRecord>('GET', '/admin/decision-engine/config'),
+    getHistory: (limit = 20) =>
+      req<{ data: DecisionEngineHistoryItem[]; total: number }>('GET', `/admin/decision-engine/config/history?limit=${limit}`),
+    updateScore: (payload: UpdateScorePayload) =>
+      req<DecisionEngineRecord>('PUT', '/admin/decision-engine/config/score', payload),
+    updateTiers: (payload: UpdateTiersPayload) =>
+      req<DecisionEngineRecord>('PUT', '/admin/decision-engine/config/tiers', payload),
+    updateGates: (payload: UpdateGatesPayload) =>
+      req<DecisionEngineRecord>('PUT', '/admin/decision-engine/config/gates', payload),
+    updateEligibility: (payload: UpdateEligibilityPayload) =>
+      req<DecisionEngineRecord>('PUT', '/admin/decision-engine/config/eligibility', payload),
   },
 };
