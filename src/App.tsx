@@ -96,15 +96,19 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {NAV.map(({ label, icon: Icon, desc }) => (
-            <div key={label} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                <Icon size={14} color="rgba(255,255,255,0.4)" />
+        <div className="flex flex-col gap-5">
+          {[
+            { icon: LayoutDashboard, title: 'Full platform visibility', body: 'Real-time view of every transaction, merchant, and customer across the platform.' },
+            { icon: Users, title: 'Risk & compliance controls', body: 'Approve merchants, manage customer tiers, review delinquency cases, and act instantly.' },
+            { icon: Zap, title: 'Automated payment ops', body: 'Monitor auto-debit jobs, replay failed webhooks, and track settlement payouts end-to-end.' },
+          ].map(({ icon: Icon, title, body }) => (
+            <div key={title} className="flex items-start gap-3.5">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(0,214,111,0.12)] flex items-center justify-center shrink-0 mt-0.5">
+                <Icon size={14} color="#00d66f" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-[13px] font-bold text-white/70">{label}</p>
-                <p className="text-[11px] text-white/30">{desc}</p>
+                <p className="text-[13px] font-bold text-white/80 mb-0.5">{title}</p>
+                <p className="text-[12px] text-white/35 leading-relaxed">{body}</p>
               </div>
             </div>
           ))}
