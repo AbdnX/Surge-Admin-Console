@@ -68,17 +68,24 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
   const [financialsLoading, setFinancialsLoading] = useState(true);
   const [refreshingScore, setRefreshingScore] = useState(false);
 
+  // Credit bureau
+  const [creditCheck, setCreditCheck] = useState<any | null>(null);
+  const [runningCreditCheck, setRunningCreditCheck] = useState(false);
+  const [creditOverride, setCreditOverride] = useState('');
+
   useEffect(() => {
     const load = async () => {
       setFinancialsLoading(true);
-      const [histRes, pmRes, txRes] = await Promise.allSettled([
+      const [histRes, pmRes, txRes, ccRes] = await Promise.allSettled([
         api.risk.history(customer.id),
         api.paymentMethods.list(customer.id),
         api.customerTransactions.list(customer.id),
+        api.customers.getCreditCheck(customer.id),
       ]);
       if (histRes.status === 'fulfilled') setScoreHistory(histRes.value.data?.data ?? []);
       if (pmRes.status === 'fulfilled') setPaymentMethods(pmRes.value.data ?? []);
       if (txRes.status === 'fulfilled') setTransactions(txRes.value.data ?? []);
+      if (ccRes.status === 'fulfilled') setCreditCheck(ccRes.value.data ?? null);
       setFinancialsLoading(false);
     };
     void load();
@@ -145,6 +152,24 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
     finally { setActionLoading(false); }
   };
 
+  const handleRunCreditCheck = async (overrideBand?: string) => {
+    setRunningCreditCheck(true);
+    try {
+      const res = await api.customers.runCreditCheck(customer.id, 'admin', overrideBand || undefined);
+      if (res.ok) {
+        setCreditCheck(res.data);
+        setCreditOverride('');
+        notify(`Credit check complete — band: ${res.data.credit_band}`);
+        // Refresh score to reflect new band
+        const scoreRes = await api.risk.refresh(customer.id);
+        if (scoreRes.ok) setCustomer(c => ({ ...c, surge_score: scoreRes.data.score }));
+      } else {
+        notify('Credit check failed', false);
+      }
+    } catch { notify('Error running credit check', false); }
+    finally { setRunningCreditCheck(false); }
+  };
+
   const score = customer.surge_score ?? 0;
   const scoreColor = score >= 700 ? '#00d66f' : score >= 400 ? '#F97316' : '#E11D48';
 
@@ -187,6 +212,17 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
               <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5">Account</p>
               <Badge status={customer.account_status} map={ACCOUNT_STATUS_COLORS} />
             </div>
+            {creditCheck?.credit_band && (() => {
+              const bandColors: Record<string, string> = { Excellent: '#00d66f', Good: '#3B82F6', Fair: '#F97316', Poor: '#E11D48' };
+              return (
+                <div>
+                  <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5">Credit Band</p>
+                  <span style={{ color: bandColors[creditCheck.credit_band] ?? '#94A3B8' }} className="text-[13px] font-black">
+                    {creditCheck.credit_band}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         </section>
 
@@ -323,6 +359,88 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
             </tbody>
           </table>
         )}
+      </section>
+
+      {/* ── Credit Bureau ── */}
+      <section className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden mt-5">
+        <div className="px-5 py-3.5 border-b border-[#F1F5F9] flex items-center justify-between">
+          <p className="text-[13px] font-bold text-[#0F172A]">Credit Bureau</p>
+          {creditCheck && (
+            <span className="text-[11px] text-[#64748B]">
+              Last checked {new Date(creditCheck.checked_at).toLocaleDateString('en-NG', { dateStyle: 'medium' })} · {creditCheck.bureau}
+            </span>
+          )}
+        </div>
+        <div className="p-5">
+          {financialsLoading ? (
+            <div className="py-6 text-center text-[#94A3B8] text-[13px]">Loading…</div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {/* Current band display */}
+              <div className="grid grid-cols-4 gap-4">
+                {(['Excellent', 'Good', 'Fair', 'Poor'] as const).map(band => {
+                  const bandColors: Record<string, { bg: string; border: string; text: string }> = {
+                    Excellent: { bg: '#F0FDF4', border: '#86EFAC', text: '#16A34A' },
+                    Good:      { bg: '#EFF6FF', border: '#93C5FD', text: '#2563EB' },
+                    Fair:      { bg: '#FFF7ED', border: '#FED7AA', text: '#F97316' },
+                    Poor:      { bg: '#FFF1F2', border: '#FECDD3', text: '#E11D48' },
+                  };
+                  const isCurrent = creditCheck?.credit_band === band;
+                  const c = bandColors[band];
+                  return (
+                    <div
+                      key={band}
+                      style={isCurrent ? { background: c.bg, borderColor: c.border } : {}}
+                      className={`rounded-xl border px-4 py-3 text-center transition-all ${isCurrent ? 'border-2' : 'border-[#E8ECF0]'}`}
+                    >
+                      <p style={isCurrent ? { color: c.text } : {}} className={`text-[13px] font-black ${isCurrent ? '' : 'text-[#CBD5E1]'}`}>{band}</p>
+                      {isCurrent && creditCheck?.raw_score != null && (
+                        <p style={{ color: c.text }} className="text-[11px] font-semibold mt-0.5 opacity-70">Score {creditCheck.raw_score}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Actions row */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  disabled={runningCreditCheck}
+                  onClick={() => void handleRunCreditCheck()}
+                  className="px-4 py-2.5 bg-[#0F172A] text-white rounded-xl text-[13px] font-bold disabled:opacity-50 hover:bg-[#1E293B] transition-colors"
+                >
+                  {runningCreditCheck ? 'Running…' : 'Run Credit Check'}
+                </button>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={creditOverride}
+                    onChange={e => setCreditOverride(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-[#E8ECF0] text-[13px] text-[#0F172A] bg-white outline-none"
+                  >
+                    <option value="">Manual override…</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Poor">Poor</option>
+                  </select>
+                  {creditOverride && (
+                    <button
+                      disabled={runningCreditCheck}
+                      onClick={() => void handleRunCreditCheck(creditOverride)}
+                      className="px-4 py-2.5 bg-[#F59E0B] text-white rounded-xl text-[13px] font-bold disabled:opacity-50"
+                    >
+                      Apply Override
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {!creditCheck && (
+                <p className="text-[13px] text-[#94A3B8]">No credit check on record. Run a check to populate the credit band.</p>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ── Payment Methods ── */}
