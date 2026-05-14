@@ -415,6 +415,20 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
                 >
                   {runningCreditCheck ? 'Running…' : 'Run Credit Check'}
                 </button>
+                <button
+                  disabled={runningCreditCheck}
+                  onClick={() => void (async () => {
+                    setRunningCreditCheck(true);
+                    try {
+                      await api.customers.requestReassessment(customer.id);
+                      notify('Customer will be prompted to pay for a new assessment');
+                    } catch { notify('Failed to request reassessment', false); }
+                    finally { setRunningCreditCheck(false); }
+                  })()}
+                  className="px-4 py-2.5 bg-[#FFF7ED] text-[#F97316] border border-[#FED7AA] rounded-xl text-[13px] font-bold disabled:opacity-50"
+                >
+                  Request Re-assessment
+                </button>
                 <div className="flex items-center gap-2">
                   <select
                     value={creditOverride}

@@ -370,6 +370,8 @@ export const api = {
       req<{ ok: boolean; data: any | null }>('GET', `/admin/customers/${id}/credit-check`),
     runCreditCheck: (id: string, source = 'admin', override_band?: string) =>
       req<{ ok: boolean; data: any }>('POST', `/admin/customers/${id}/credit-check`, { source, override_band }),
+    requestReassessment: (id: string) =>
+      req<{ ok: boolean; data: any }>('PUT', `/admin/customers/${id}/request-reassessment`),
   },
   risk: {
     score: (customerId: string) =>
