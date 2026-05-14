@@ -160,9 +160,13 @@ function CustomerDetailPage({ customer: initial, onBack, notify }: {
         setCreditCheck(res.data);
         setCreditOverride('');
         notify(`Credit check complete — band: ${res.data.credit_band}`);
-        // Refresh score to reflect new band
+        // Refresh score to reflect new band, then reload history
         const scoreRes = await api.risk.refresh(customer.id);
-        if (scoreRes.ok) setCustomer(c => ({ ...c, surge_score: scoreRes.data.score }));
+        if (scoreRes.ok) {
+          setCustomer(c => ({ ...c, surge_score: scoreRes.data.score }));
+          const histRes = await api.risk.history(customer.id);
+          setScoreHistory(histRes.data?.data ?? []);
+        }
       } else {
         notify('Credit check failed', false);
       }
