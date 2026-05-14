@@ -187,10 +187,13 @@ export interface FeeConfig {
   merchant_id:     string | null;
   group_id:        string | null;
   fee_type:        FeeType;
-  percentage_rate: number | null;
-  flat_amount:     number | null;
-  min_fee:         number | null;
-  max_fee:         number | null;
+  percentage_rate:        number | null;
+  flat_amount:            number | null;
+  min_fee:                number | null;
+  max_fee:                number | null;
+  risk_premium_rate:      number | null;
+  transaction_fee_bearer: 'merchant' | 'customer';
+  risk_fee_bearer:        'merchant' | 'customer';
   is_active:       boolean;
   effective_from:  string | null;
   effective_until: string | null;
@@ -199,15 +202,20 @@ export interface FeeConfig {
 }
 
 export interface FeeCalculationResult {
-  merchant_id:        string | null;
-  resolved_config_id: string;
-  resolved_scope:     FeeScope;
-  config_name:        string;
-  gross_amount:       number;
-  fee_amount:         number;
-  merchant_payable:   number;
-  currency:           string;
-  effective_rate_pct: number;
+  merchant_id:            string | null;
+  resolved_config_id:     string;
+  resolved_scope:         FeeScope;
+  config_name:            string;
+  gross_amount:           number;
+  transaction_fee:        number;
+  risk_fee:               number;
+  fee_amount:             number;
+  merchant_payable:       number;
+  currency:               string;
+  effective_rate_pct:     number;
+  risk_bearer:            string;
+  transaction_fee_bearer: string;
+  risk_fee_bearer:        string;
 }
 
 // ---------------------------------------------------------------------------
@@ -475,9 +483,9 @@ export const api = {
       }).then(r => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
     resolve: (merchantId: string) =>
       req<{ ok: boolean; data: FeeConfig }>('GET', `/admin/fee-configs/resolve/${merchantId}`),
-    preview: (amount: number, merchantId?: string, currency = 'NGN') =>
+    preview: (amount: number, merchantId?: string, currency = 'NGN', riskBearer = 'merchant_backed') =>
       req<{ ok: boolean; data: FeeCalculationResult }>('POST', '/admin/fee-configs/preview', {
-        amount, merchant_id: merchantId ?? null, currency,
+        amount, merchant_id: merchantId ?? null, currency, risk_bearer: riskBearer,
       }),
     assignMerchantGroup: (merchantId: string, groupId: string | null) =>
       req<{ ok: boolean; data: { merchant_id: string; fee_group_id: string | null } }>(

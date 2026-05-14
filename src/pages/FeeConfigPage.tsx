@@ -147,14 +147,16 @@ function GlobalHero({
 }) {
   const global = configs.find(c => c.scope === 'global' && c.is_active);
   const [editing, setEditing] = useState(false);
-  const [rate, setRate] = useState('');
-  const [minFee, setMinFee] = useState('');
-  const [maxFee, setMaxFee] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [rate, setRate]       = useState('');
+  const [riskRate, setRiskRate] = useState('');
+  const [minFee, setMinFee]   = useState('');
+  const [maxFee, setMaxFee]   = useState('');
+  const [saving, setSaving]   = useState(false);
 
   const startEdit = () => {
     if (!global) return;
     setRate(global.percentage_rate != null ? String(global.percentage_rate * 100) : '');
+    setRiskRate(global.risk_premium_rate != null ? String(global.risk_premium_rate * 100) : '');
     setMinFee(global.min_fee != null ? String(global.min_fee) : '');
     setMaxFee(global.max_fee != null ? String(global.max_fee) : '');
     setEditing(true);
@@ -165,9 +167,10 @@ function GlobalHero({
     setSaving(true);
     try {
       const payload: any = {};
-      if (rate) payload.percentage_rate = parseFloat(rate) / 100;
-      if (minFee) payload.min_fee = parseFloat(minFee);
-      if (maxFee) payload.max_fee = parseFloat(maxFee);
+      if (rate)     payload.percentage_rate  = parseFloat(rate) / 100;
+      if (riskRate) payload.risk_premium_rate = parseFloat(riskRate) / 100;
+      if (minFee)   payload.min_fee = parseFloat(minFee);
+      if (maxFee)   payload.max_fee = parseFloat(maxFee);
       await onSave(global.id, payload);
       setEditing(false);
     } finally {
@@ -177,7 +180,7 @@ function GlobalHero({
 
   if (!global) return (
     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
-      <p className="text-[13px] text-amber-700 font-semibold">No active global default found. System fallback rate of 2.5% is in use.</p>
+      <p className="text-[13px] text-amber-700 font-semibold">No active global default found. System fallback rate of 1.5% base + 3.5% risk premium is in use.</p>
     </div>
   );
 
@@ -218,12 +221,18 @@ function GlobalHero({
       </div>
 
       {editing ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label><span className="text-white/40">Rate (%)</span></Label>
+            <Label><span className="text-white/40">Base Rate (%)</span></Label>
             <input value={rate} onChange={e => setRate(e.target.value)} type="number" step="0.0001"
               className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
-              placeholder="2.5" />
+              placeholder="1.5" />
+          </div>
+          <div>
+            <Label><span className="text-white/40">Risk Premium (%)</span></Label>
+            <input value={riskRate} onChange={e => setRiskRate(e.target.value)} type="number" step="0.0001"
+              className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
+              placeholder="3.5" />
           </div>
           <div>
             <Label><span className="text-white/40">Min Fee (₦)</span></Label>
@@ -241,23 +250,42 @@ function GlobalHero({
       ) : (
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[42px] font-black tracking-tight leading-none">
-              {fmtRate(global)}
-            </p>
+            <div className="flex items-baseline gap-3">
+              <p className="text-[42px] font-black tracking-tight leading-none">
+                {fmtRate(global)}
+              </p>
+              {global.risk_premium_rate != null && global.risk_premium_rate > 0 && (
+                <div className="pb-1">
+                  <span className="text-[11px] font-bold text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                    +{(global.risk_premium_rate * 100).toFixed(2)}% risk
+                  </span>
+                </div>
+              )}
+            </div>
             <p className="text-[13px] text-white/40 mt-2">{global.name}</p>
           </div>
           <div className="flex gap-6 text-right pb-1">
             <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Type</p>
-              <p className="text-[13px] font-bold text-white capitalize mt-0.5">{global.fee_type}</p>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Surge-backed total</p>
+              <p className="text-[13px] font-bold text-amber-300 mt-0.5">
+                {global.percentage_rate != null && global.risk_premium_rate != null
+                  ? `${((global.percentage_rate + global.risk_premium_rate) * 100).toFixed(2)}%`
+                  : '—'}
+              </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Floor</p>
-              <p className="text-[13px] font-bold text-white mt-0.5">{global.min_fee != null ? fmtNgn(global.min_fee) : '—'}</p>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Tx bearer</p>
+              <p className="text-[13px] font-bold text-white capitalize mt-0.5">{global.transaction_fee_bearer}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Cap</p>
-              <p className="text-[13px] font-bold text-white mt-0.5">{global.max_fee != null ? fmtNgn(global.max_fee) : '—'}</p>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Risk bearer</p>
+              <p className="text-[13px] font-bold text-white capitalize mt-0.5">{global.risk_fee_bearer}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Floor / Cap</p>
+              <p className="text-[13px] font-bold text-white mt-0.5">
+                {global.min_fee != null ? fmtNgn(global.min_fee) : '—'} / {global.max_fee != null ? fmtNgn(global.max_fee) : '—'}
+              </p>
             </div>
           </div>
         </div>
@@ -273,7 +301,11 @@ function GlobalHero({
 const EMPTY_FORM = {
   name: '', scope: 'global' as FeeScope, merchant_id: '', group_id: '',
   fee_type: 'percentage' as FeeType, percentage_rate: '', flat_amount: '',
-  min_fee: '', max_fee: '', is_active: true, effective_from: '', effective_until: '',
+  min_fee: '', max_fee: '',
+  risk_premium_rate: '3.5',
+  transaction_fee_bearer: 'customer' as 'merchant' | 'customer',
+  risk_fee_bearer: 'merchant' as 'merchant' | 'customer',
+  is_active: true, effective_from: '', effective_until: '',
 };
 
 function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
@@ -288,6 +320,9 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
     flat_amount: initial.flat_amount != null ? String(initial.flat_amount) : '',
     min_fee: initial.min_fee != null ? String(initial.min_fee) : '',
     max_fee: initial.max_fee != null ? String(initial.max_fee) : '',
+    risk_premium_rate: initial.risk_premium_rate != null ? String(initial.risk_premium_rate * 100) : '3.5',
+    transaction_fee_bearer: (initial.transaction_fee_bearer ?? 'customer') as 'merchant' | 'customer',
+    risk_fee_bearer: (initial.risk_fee_bearer ?? 'merchant') as 'merchant' | 'customer',
     is_active: initial.is_active,
     effective_from: initial.effective_from ? initial.effective_from.slice(0, 16) : '',
     effective_until: initial.effective_until ? initial.effective_until.slice(0, 16) : '',
@@ -308,6 +343,9 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
         p.flat_amount = parseFloat(form.flat_amount);
       if (form.min_fee)       p.min_fee        = parseFloat(form.min_fee);
       if (form.max_fee)       p.max_fee        = parseFloat(form.max_fee);
+      if (form.risk_premium_rate) p.risk_premium_rate = parseFloat(form.risk_premium_rate) / 100;
+      p.transaction_fee_bearer = form.transaction_fee_bearer;
+      p.risk_fee_bearer        = form.risk_fee_bearer;
       if (form.effective_from)  p.effective_from  = new Date(form.effective_from).toISOString();
       if (form.effective_until) p.effective_until = new Date(form.effective_until).toISOString();
       await onSave(p);
@@ -394,6 +432,36 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
                 onChange={e => f('max_fee', e.target.value)} placeholder="No cap" />
             </div>
           </div>
+
+          {/* Risk premium */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-3">
+            <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest">Risk Premium — Surge-backed transactions</p>
+            <div>
+              <Label>Risk Premium Rate (%)</Label>
+              <Input type="number" step="0.0001" min="0" max="100" value={form.risk_premium_rate}
+                onChange={e => f('risk_premium_rate', e.target.value)} placeholder="e.g. 3.5" />
+              <p className="text-[11px] text-amber-600 mt-1">Only charged when Surge bears transaction risk.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Transaction fee paid by</Label>
+                <select value={form.transaction_fee_bearer} onChange={e => f('transaction_fee_bearer', e.target.value)}
+                  className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white">
+                  <option value="customer">Customer (default)</option>
+                  <option value="merchant">Merchant</option>
+                </select>
+              </div>
+              <div>
+                <Label>Risk premium paid by</Label>
+                <select value={form.risk_fee_bearer} onChange={e => f('risk_fee_bearer', e.target.value)}
+                  className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white">
+                  <option value="merchant">Merchant (default)</option>
+                  <option value="customer">Customer</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Effective From</Label>
               <Input type="datetime-local" value={form.effective_from}
@@ -876,18 +944,19 @@ function GroupsTab({
 // ---------------------------------------------------------------------------
 
 function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: Merchant[] }) {
-  const [amount, setAmount]       = useState('');
+  const [amount, setAmount]         = useState('');
   const [merchantId, setMerchantId] = useState('');
-  const [result, setResult]       = useState<FeeCalculationResult | null>(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
+  const [riskBearer, setRiskBearer] = useState<'merchant_backed' | 'surge_backed'>('merchant_backed');
+  const [result, setResult]         = useState<FeeCalculationResult | null>(null);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
 
   const run = async () => {
     const num = parseFloat(amount);
     if (!num || num <= 0) { setError('Enter a valid amount'); return; }
     setLoading(true); setError('');
     try {
-      const res = await api.feeConfigs.preview(num, merchantId || undefined);
+      const res = await api.feeConfigs.preview(num, merchantId || undefined, 'NGN', riskBearer);
       setResult(res.data);
     } catch (e: any) { setError(e.message ?? 'Preview failed'); }
     finally { setLoading(false); }
@@ -932,6 +1001,23 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
             </select>
           </div>
 
+          {/* Risk bearer toggle */}
+          <div>
+            <Label>Risk Model</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: 'merchant_backed', label: 'Merchant-backed', sub: '1.5% base only' },
+                { value: 'surge_backed',    label: 'Surge-backed',    sub: '1.5% + 3.5% risk premium' },
+              ] as const).map(opt => (
+                <button key={opt.value} onClick={() => { setRiskBearer(opt.value); setResult(null); }}
+                  className={`flex flex-col items-start px-4 py-3 rounded-xl border text-left transition-colors ${riskBearer === opt.value ? 'bg-[#0F172A] border-[#0F172A] text-white' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#0F172A]'}`}>
+                  <span className="text-[13px] font-bold">{opt.label}</span>
+                  <span className={`text-[11px] mt-0.5 ${riskBearer === opt.value ? 'text-white/50' : 'text-[#94A3B8]'}`}>{opt.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button onClick={() => void run()} disabled={loading || !amount}
             className="w-full py-3 bg-[#0F172A] text-white rounded-xl text-[14px] font-bold disabled:opacity-40 transition-opacity">
             {loading ? 'Calculating…' : 'Calculate Fee'}
@@ -943,7 +1029,7 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
         {result && (
           <div className="border-t border-[#F1F5F9] px-8 py-6">
             {/* Resolution trace */}
-            <div className="flex items-center gap-2 mb-5 p-3 bg-[#F8FAFC] rounded-xl">
+            <div className="flex items-center gap-2 mb-5 p-3 bg-[#F8FAFC] rounded-xl flex-wrap">
               <Info size={13} className="text-[#64748B] shrink-0" />
               <p className="text-[12px] text-[#64748B]">
                 Resolved via <span className="font-bold text-[#0F172A]">{result.config_name}</span>
@@ -952,33 +1038,60 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
               {selectedMerchant && (
                 <span className="text-[12px] text-[#94A3B8]">for {selectedMerchant.display_name}</span>
               )}
+              <span className={`ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full ${result.risk_bearer === 'surge_backed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                {result.risk_bearer === 'surge_backed' ? 'Surge-backed' : 'Merchant-backed'}
+              </span>
             </div>
 
             {/* Numbers */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-[#F8FAFC] rounded-xl p-4">
                 <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Gross Amount</p>
                 <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.gross_amount)}</p>
               </div>
               <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
-                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Platform Fee</p>
+                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Total Fee</p>
                 <p className="text-[22px] font-black text-violet-700 mt-1">{fmtNgn(result.fee_amount)}</p>
               </div>
               <div className="bg-[#F8FAFC] rounded-xl p-4">
-                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Merchant Payable</p>
-                <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.merchant_payable)}</p>
+                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">
+                  Transaction Fee <span className="normal-case font-normal">({result.transaction_fee_bearer} pays)</span>
+                </p>
+                <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.transaction_fee)}</p>
               </div>
-              <div className="bg-[#F8FAFC] rounded-xl p-4">
-                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Effective Rate</p>
-                <p className="text-[22px] font-black text-[#0F172A] mt-1">{result.effective_rate_pct.toFixed(4)}%</p>
+              {result.risk_fee > 0 ? (
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                    Risk Premium <span className="normal-case font-normal">({result.risk_fee_bearer} pays)</span>
+                  </p>
+                  <p className="text-[22px] font-black text-amber-700 mt-1">{fmtNgn(result.risk_fee)}</p>
+                </div>
+              ) : (
+                <div className="bg-[#F8FAFC] rounded-xl p-4">
+                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Risk Premium</p>
+                  <p className="text-[22px] font-black text-[#CBD5E1] mt-1">₦0.00</p>
+                  <p className="text-[11px] text-[#94A3B8] mt-0.5">Not applicable — merchant-backed</p>
+                </div>
+              )}
+              <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Merchant Payable</p>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <p className="text-[26px] font-black text-emerald-700">{fmtNgn(result.merchant_payable)}</p>
+                  <p className="text-[13px] font-semibold text-emerald-500">{result.effective_rate_pct.toFixed(4)}% effective rate</p>
+                </div>
               </div>
             </div>
 
             {/* Visual bar */}
             <div className="h-2.5 rounded-full bg-[#F1F5F9] overflow-hidden">
               <div
-                className="h-full bg-violet-500 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(result.effective_rate_pct * 10, 100)}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(result.effective_rate_pct * 10, 100)}%`,
+                  background: result.risk_bearer === 'surge_backed'
+                    ? 'linear-gradient(90deg, #8B5CF6 0%, #F59E0B 100%)'
+                    : '#8B5CF6',
+                }}
               />
             </div>
             <div className="flex justify-between mt-1">
