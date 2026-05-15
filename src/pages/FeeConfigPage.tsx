@@ -295,11 +295,12 @@ const EMPTY_FORM = {
   is_active: true, effective_from: '', effective_until: '',
 };
 
-function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
+function ConfigModal({ initial, groups, merchants, onSave, onClose, defaultScope, defaultGroupId }: {
   initial?: FeeConfig; groups: FeeGroup[]; merchants: Merchant[];
   onSave: (data: any) => Promise<void>; onClose: () => void;
+  defaultScope?: FeeScope; defaultGroupId?: string;
 }) {
-  const [form, setForm] = useState(() => !initial ? EMPTY_FORM : ({
+  const [form, setForm] = useState(() => !initial ? ({ ...EMPTY_FORM, scope: defaultScope ?? 'global', group_id: defaultGroupId ?? '' }) : ({
     name: initial.name, scope: initial.scope,
     merchant_id: initial.merchant_id ?? '', group_id: initial.group_id ?? '',
     fee_type: initial.fee_type,
@@ -584,7 +585,7 @@ function RulesTab({
   onOpenModal: () => void;
   onSaveGlobal: (id: string, data: any) => Promise<void>;
 }) {
-  const getGroupName = (id: string | null) => groups.find(g => g.id === id)?.name ?? '—';
+  const getGroupName = (id: string | null | undefined) => groups.find(g => g.id === id)?.name ?? '—';
 
   const resolveFor = (m: Merchant) => {
     const override = configs.find(c => c.scope === 'merchant' && c.merchant_id === m.id && c.is_active);
@@ -598,73 +599,11 @@ function RulesTab({
     return null;
   };
 
-  const groupConfigs    = configs.filter(c => c.scope === 'group');
   const merchantConfigs = configs.filter(c => c.scope === 'merchant');
 
   return (
     <div className="flex flex-col gap-5">
       <GlobalHero configs={configs} onSave={onSaveGlobal} onOpenModal={onEditConfig} />
-
-      {/* Group Rules */}
-      <SectionCard
-        title={<span className="flex items-center gap-1.5"><Users size={13} className="text-blue-600" />Group Rules</span>}
-        subtitle="A shared rate applied to all merchants within a named group."
-        count={groupConfigs.length}
-        countColor="blue"
-        action={
-          <button onClick={onOpenModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E2E8F0] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#F8FAFC] transition-colors">
-            <Plus size={12} /> Add Group Rule
-          </button>
-        }
-      >
-        {groupConfigs.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
-              <Users size={16} className="text-blue-400" />
-            </div>
-            <p className="text-[13px] font-semibold text-[#64748B]">No group rules yet</p>
-            <p className="text-[12px] text-[#94A3B8] mt-1">Create a group rule to apply a shared rate to multiple merchants at once.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[#F1F5F9]">
-            {groupConfigs.map(cfg => (
-              <div key={cfg.id} className="flex items-center justify-between px-5 py-4 hover:bg-[#F8FAFC] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                    <Users size={13} className="text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-bold text-[#0F172A]">{cfg.name}</p>
-                      <ActiveBadge active={cfg.is_active} />
-                    </div>
-                    <p className="text-[12px] text-[#94A3B8] mt-0.5">
-                      {cfg.group_id ? getGroupName(cfg.group_id) : '—'}
-                      {' · '}
-                      {merchants.filter(m => m.fee_group_id === cfg.group_id).length} members
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p className="text-[18px] font-black text-[#0F172A]">{fmtRate(cfg)}</p>
-                    {(cfg.min_fee != null || cfg.max_fee != null) && (
-                      <p className="text-[11px] text-[#94A3B8]">
-                        {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => onEditConfig(cfg)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
-                    <button onClick={() => onDeleteConfig(cfg.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
 
       {/* Merchant Overrides */}
       <SectionCard
@@ -771,11 +710,14 @@ function RulesTab({
 function GroupsTab({
   groups, configs, merchants,
   onEditGroup, onDeleteGroup, onCreateGroup, onAssignMerchant,
+  onEditGroupConfig, onCreateGroupConfig,
 }: {
   groups: FeeGroup[]; configs: FeeConfig[]; merchants: Merchant[];
   onEditGroup: (g: FeeGroup) => void; onDeleteGroup: (id: string) => void;
   onCreateGroup: () => void;
   onAssignMerchant: (m: Merchant) => void;
+  onEditGroupConfig: (cfg: FeeConfig) => void;
+  onCreateGroupConfig: (g: FeeGroup) => void;
 }) {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
 
@@ -820,17 +762,35 @@ function GroupsTab({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4">
+                  {/* Rate */}
                   <div className="text-right">
-                    <p className="text-[20px] font-black text-[#0F172A]">
-                      {cfg ? fmtRate(cfg) : <span className="text-[#CBD5E1] text-[14px] font-semibold">No rate set</span>}
-                    </p>
-                    {cfg && (cfg.min_fee != null || cfg.max_fee != null) && (
-                      <p className="text-[11px] text-[#94A3B8]">
-                        {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
-                      </p>
+                    {cfg ? (
+                      <>
+                        <p className="text-[20px] font-black text-[#0F172A]">{fmtRate(cfg)}</p>
+                        {(cfg.min_fee != null || cfg.max_fee != null) && (
+                          <p className="text-[11px] text-[#94A3B8]">
+                            {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[12px] font-semibold text-[#CBD5E1]">No rate set</span>
                     )}
                   </div>
+                  {/* Rate action */}
+                  {cfg ? (
+                    <button onClick={() => onEditGroupConfig(cfg)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 border border-[#E2E8F0] rounded-lg text-[11px] font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors">
+                      <Pencil size={11} /> Edit Rate
+                    </button>
+                  ) : (
+                    <button onClick={() => onCreateGroupConfig(g)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 border border-blue-200 rounded-lg text-[11px] font-semibold text-blue-600 hover:bg-blue-50 transition-colors">
+                      <Plus size={11} /> Set Rate
+                    </button>
+                  )}
+                  {/* Group actions */}
                   <div className="flex items-center gap-1">
                     <button onClick={() => onEditGroup(g)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
                     <button onClick={() => onDeleteGroup(g.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
@@ -1090,11 +1050,13 @@ export default function FeeConfigPage() {
   const [loading, setLoading]     = useState(true);
   const [activeTab, setActiveTab] = useState<PageTab>('rules');
 
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [editingConfig, setEditingConfig]     = useState<FeeConfig | undefined>();
-  const [showGroupModal, setShowGroupModal]   = useState(false);
-  const [editingGroup, setEditingGroup]       = useState<FeeGroup | undefined>();
-  const [assignTarget, setAssignTarget]       = useState<Merchant | null>(null);
+  const [showConfigModal, setShowConfigModal]   = useState(false);
+  const [editingConfig, setEditingConfig]       = useState<FeeConfig | undefined>();
+  const [configModalScope, setConfigModalScope] = useState<FeeScope | undefined>();
+  const [configModalGroupId, setConfigModalGroupId] = useState<string | undefined>();
+  const [showGroupModal, setShowGroupModal]     = useState(false);
+  const [editingGroup, setEditingGroup]         = useState<FeeGroup | undefined>();
+  const [assignTarget, setAssignTarget]         = useState<Merchant | null>(null);
 
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const notify = (msg: string, ok = true) => setToast({ msg, ok });
@@ -1114,10 +1076,18 @@ export default function FeeConfigPage() {
 
   useEffect(() => { void load(); }, []);
 
+  const openConfigModal = (cfg?: FeeConfig, scope?: FeeScope, groupId?: string) => {
+    setEditingConfig(cfg);
+    setConfigModalScope(scope);
+    setConfigModalGroupId(groupId);
+    setShowConfigModal(true);
+  };
+
   const handleSaveConfig = async (data: any) => {
     if (editingConfig) { await api.feeConfigs.update(editingConfig.id, data); notify('Fee config updated'); }
     else               { await api.feeConfigs.create(data);                   notify('Fee config created'); }
     setShowConfigModal(false); setEditingConfig(undefined);
+    setConfigModalScope(undefined); setConfigModalGroupId(undefined);
     await load();
   };
 
@@ -1172,8 +1142,9 @@ export default function FeeConfigPage() {
 
       {showConfigModal && (
         <ConfigModal initial={editingConfig} groups={groups} merchants={merchants}
+          defaultScope={configModalScope} defaultGroupId={configModalGroupId}
           onSave={handleSaveConfig}
-          onClose={() => { setShowConfigModal(false); setEditingConfig(undefined); }} />
+          onClose={() => { setShowConfigModal(false); setEditingConfig(undefined); setConfigModalScope(undefined); setConfigModalGroupId(undefined); }} />
       )}
       {showGroupModal && (
         <GroupModal initial={editingGroup} onSave={handleSaveGroup}
@@ -1190,7 +1161,7 @@ export default function FeeConfigPage() {
           <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">Fee Configuration</h1>
           <p className="text-[13px] text-[#64748B]">Set pricing rules at the platform, group, or merchant level.</p>
         </div>
-        <button onClick={() => { setEditingConfig(undefined); setShowConfigModal(true); }}
+        <button onClick={() => openConfigModal()}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#0F172A] text-white rounded-xl text-[13px] font-bold hover:opacity-90 transition-opacity shrink-0">
           <Plus size={14} /> New Config
         </button>
@@ -1214,9 +1185,9 @@ export default function FeeConfigPage() {
       {activeTab === 'rules' && (
         <RulesTab
           configs={configs} groups={groups} merchants={merchants}
-          onEditConfig={cfg => { setEditingConfig(cfg); setShowConfigModal(true); }}
+          onEditConfig={cfg => openConfigModal(cfg)}
           onDeleteConfig={id => void handleDeleteConfig(id)}
-          onOpenModal={() => { setEditingConfig(undefined); setShowConfigModal(true); }}
+          onOpenModal={() => openConfigModal()}
           onSaveGlobal={handleSaveGlobal}
         />
       )}
@@ -1227,6 +1198,8 @@ export default function FeeConfigPage() {
           onDeleteGroup={id => void handleDeleteGroup(id)}
           onCreateGroup={() => { setEditingGroup(undefined); setShowGroupModal(true); }}
           onAssignMerchant={m => setAssignTarget(m)}
+          onEditGroupConfig={cfg => openConfigModal(cfg)}
+          onCreateGroupConfig={g => openConfigModal(undefined, 'group', g.id)}
         />
       )}
       {activeTab === 'preview' && (
