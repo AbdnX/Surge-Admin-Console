@@ -59,14 +59,14 @@ function Toast({ msg, ok, onDismiss }: { msg: string; ok: boolean; onDismiss: ()
 }
 
 // ---------------------------------------------------------------------------
-// Shared label / input primitives
+// Shared primitives
 // ---------------------------------------------------------------------------
 
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{children}</p>;
 }
 
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+function FieldInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
@@ -75,71 +75,71 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Priority Chain — visual resolution diagram
-// ---------------------------------------------------------------------------
-
-function PriorityChain() {
-  const steps = [
-    {
-      icon: Building2, label: 'Merchant Override', color: 'emerald',
-      desc: 'A rate set specifically for one merchant. Highest priority — always wins.',
-    },
-    {
-      icon: Users, label: 'Group Rule', color: 'blue',
-      desc: 'A rate assigned to a named group. Applies if the merchant has no personal override.',
-    },
-    {
-      icon: Globe, label: 'Global Default', color: 'violet',
-      desc: 'The platform-wide fallback rate. Applies to every merchant with no other config.',
-    },
-  ];
-
-  const colorMap: Record<string, { ring: string; icon: string; text: string; bg: string }> = {
-    emerald: { ring: 'border-emerald-200', icon: 'text-emerald-600', text: 'text-emerald-700', bg: 'bg-emerald-50' },
-    blue:    { ring: 'border-blue-200',    icon: 'text-blue-600',    text: 'text-blue-700',    bg: 'bg-blue-50'    },
-    violet:  { ring: 'border-violet-200',  icon: 'text-violet-600',  text: 'text-violet-700',  bg: 'bg-violet-50'  },
-  };
-
+// Card with consistent header pattern
+function SectionCard({
+  title, subtitle, count, countColor = 'slate', action, children,
+}: {
+  title: React.ReactNode;
+  subtitle?: string;
+  count?: number;
+  countColor?: 'slate' | 'blue' | 'emerald';
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const countCls = {
+    slate:   'bg-[#F1F5F9] text-[#64748B]',
+    blue:    'bg-blue-100 text-blue-700',
+    emerald: 'bg-emerald-100 text-emerald-700',
+  }[countColor];
   return (
-    <div className="bg-white border border-[#E8ECF0] rounded-2xl p-6 mb-6">
-      <p className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest mb-4">How fee resolution works</p>
-      <div className="flex items-stretch gap-0">
-        {steps.map((s, i) => {
-          const c = colorMap[s.color];
-          return (
-            <div key={s.label} className="flex items-stretch gap-0 flex-1">
-              <div className={`flex-1 border-2 rounded-xl p-4 ${c.ring} ${c.bg}`}>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2.5 bg-white border ${c.ring}`}>
-                  <s.icon size={14} className={c.icon} />
-                </div>
-                <p className={`text-[12px] font-black mb-1 ${c.text}`}>{s.label}</p>
-                <p className="text-[11px] text-[#64748B] leading-relaxed">{s.desc}</p>
-                <div className={`mt-2.5 text-[10px] font-bold uppercase tracking-widest ${c.text}`}>
-                  Priority {i + 1}
-                </div>
-              </div>
-              {i < steps.length - 1 && (
-                <div className="flex items-center px-2 shrink-0">
-                  <ArrowRight size={14} className="text-[#CBD5E1]" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+    <div className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
+      <div className="px-5 py-4 border-b border-[#F1F5F9] flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-bold text-[#0F172A]">{title}</p>
+            {count !== undefined && (
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${countCls}`}>{count}</span>
+            )}
+          </div>
+          {subtitle && <p className="text-[11px] text-[#94A3B8] mt-0.5">{subtitle}</p>}
+        </div>
+        {action}
       </div>
+      {children}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Global Default Hero — inline editable
+// Resolution info bar (compact)
+// ---------------------------------------------------------------------------
+
+function ResolutionBar() {
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 bg-[#F8FAFC] border border-[#E8ECF0] rounded-xl mb-5 flex-wrap">
+      <Info size={13} className="text-[#94A3B8] shrink-0" />
+      <span className="text-[12px] text-[#64748B]">Fee resolution priority:</span>
+      <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full">
+        <Building2 size={11} /> Merchant Override
+      </span>
+      <ArrowRight size={12} className="text-[#CBD5E1]" />
+      <span className="inline-flex items-center gap-1 text-[12px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full">
+        <Users size={11} /> Group Rule
+      </span>
+      <ArrowRight size={12} className="text-[#CBD5E1]" />
+      <span className="inline-flex items-center gap-1 text-[12px] font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-full">
+        <Globe size={11} /> Global Default
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Global Default Hero
 // ---------------------------------------------------------------------------
 
 function GlobalHero({
-  configs,
-  onSave,
-  onOpenModal,
+  configs, onSave, onOpenModal,
 }: {
   configs: FeeConfig[];
   onSave: (id: string, data: any) => Promise<void>;
@@ -167,7 +167,7 @@ function GlobalHero({
     setSaving(true);
     try {
       const payload: any = {};
-      if (rate)     payload.percentage_rate  = parseFloat(rate) / 100;
+      if (rate)     payload.percentage_rate   = parseFloat(rate) / 100;
       if (riskRate) payload.risk_premium_rate = parseFloat(riskRate) / 100;
       if (minFee)   payload.min_fee = parseFloat(minFee);
       if (maxFee)   payload.max_fee = parseFloat(maxFee);
@@ -179,17 +179,17 @@ function GlobalHero({
   };
 
   if (!global) return (
-    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
-      <p className="text-[13px] text-amber-700 font-semibold">No active global default found. System fallback rate of 1.5% base + 3.5% risk premium is in use.</p>
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+      <p className="text-[13px] text-amber-700 font-semibold">No active global default found. System fallback: 1.5% base + 3.5% risk premium.</p>
     </div>
   );
 
   return (
-    <div className="bg-[#0F172A] rounded-2xl p-6 mb-6 text-white">
-      <div className="flex items-start justify-between mb-5">
+    <div className="bg-[#0F172A] rounded-2xl mb-5 text-white overflow-hidden">
+      <div className="px-6 py-5 border-b border-white/[0.07] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center">
-            <Globe size={14} className="text-violet-300" />
+          <div className="w-6 h-6 rounded-lg bg-violet-500/20 flex items-center justify-center">
+            <Globe size={12} className="text-violet-300" />
           </div>
           <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Global Default Rate</p>
         </div>
@@ -201,7 +201,7 @@ function GlobalHero({
                 Cancel
               </button>
               <button onClick={() => void save()} disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00d66f] text-[#0F172A] rounded-lg text-[12px] font-bold disabled:opacity-50 transition-opacity">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00d66f] text-[#0F172A] rounded-lg text-[12px] font-bold disabled:opacity-50">
                 <Check size={12} /> {saving ? 'Saving…' : 'Save'}
               </button>
             </>
@@ -220,76 +220,63 @@ function GlobalHero({
         </div>
       </div>
 
-      {editing ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label><span className="text-white/40">Base Rate (%)</span></Label>
-            <input value={rate} onChange={e => setRate(e.target.value)} type="number" step="0.0001"
-              className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
-              placeholder="1.5" />
+      <div className="px-6 py-5">
+        {editing ? (
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: 'Base Rate (%)', value: rate, onChange: setRate, placeholder: '1.5' },
+              { label: 'Risk Premium (%)', value: riskRate, onChange: setRiskRate, placeholder: '3.5' },
+              { label: 'Min Fee (₦)', value: minFee, onChange: setMinFee, placeholder: 'None' },
+              { label: 'Max Fee (₦)', value: maxFee, onChange: setMaxFee, placeholder: 'None' },
+            ].map(({ label, value, onChange, placeholder }) => (
+              <div key={label}>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{label}</p>
+                <input value={value} onChange={e => onChange(e.target.value)} type="number" step="0.0001"
+                  placeholder={placeholder}
+                  className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40 placeholder:text-white/20" />
+              </div>
+            ))}
           </div>
-          <div>
-            <Label><span className="text-white/40">Risk Premium (%)</span></Label>
-            <input value={riskRate} onChange={e => setRiskRate(e.target.value)} type="number" step="0.0001"
-              className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
-              placeholder="3.5" />
-          </div>
-          <div>
-            <Label><span className="text-white/40">Min Fee (₦)</span></Label>
-            <input value={minFee} onChange={e => setMinFee(e.target.value)} type="number" step="0.01"
-              className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
-              placeholder="None" />
-          </div>
-          <div>
-            <Label><span className="text-white/40">Max Fee (₦)</span></Label>
-            <input value={maxFee} onChange={e => setMaxFee(e.target.value)} type="number" step="0.01"
-              className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-[15px] font-bold text-white outline-none focus:border-white/40"
-              placeholder="None" />
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="flex items-baseline gap-3">
-              <p className="text-[42px] font-black tracking-tight leading-none">
-                {fmtRate(global)}
-              </p>
-              {global.risk_premium_rate != null && global.risk_premium_rate > 0 && (
-                <div className="pb-1">
-                  <span className="text-[11px] font-bold text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+        ) : (
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="flex items-baseline gap-3">
+                <p className="text-[42px] font-black tracking-tight leading-none">{fmtRate(global)}</p>
+                {global.risk_premium_rate != null && global.risk_premium_rate > 0 && (
+                  <span className="text-[11px] font-bold text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full pb-1">
                     +{(global.risk_premium_rate * 100).toFixed(2)}% risk
                   </span>
-                </div>
-              )}
+                )}
+              </div>
+              <p className="text-[13px] text-white/40 mt-1.5">{global.name}</p>
             </div>
-            <p className="text-[13px] text-white/40 mt-2">{global.name}</p>
+            <div className="flex gap-6 text-right">
+              <div>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Surge-backed total</p>
+                <p className="text-[15px] font-bold text-amber-300 mt-1">
+                  {global.percentage_rate != null && global.risk_premium_rate != null
+                    ? `${((global.percentage_rate + global.risk_premium_rate) * 100).toFixed(2)}%`
+                    : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Tx fee paid by</p>
+                <p className="text-[15px] font-bold text-white capitalize mt-1">{global.transaction_fee_bearer}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Risk fee paid by</p>
+                <p className="text-[15px] font-bold text-white capitalize mt-1">{global.risk_fee_bearer}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Floor / Cap</p>
+                <p className="text-[15px] font-bold text-white mt-1">
+                  {global.min_fee != null ? fmtNgn(global.min_fee) : '—'} / {global.max_fee != null ? fmtNgn(global.max_fee) : '—'}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-6 text-right pb-1">
-            <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Surge-backed total</p>
-              <p className="text-[13px] font-bold text-amber-300 mt-0.5">
-                {global.percentage_rate != null && global.risk_premium_rate != null
-                  ? `${((global.percentage_rate + global.risk_premium_rate) * 100).toFixed(2)}%`
-                  : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Tx bearer</p>
-              <p className="text-[13px] font-bold text-white capitalize mt-0.5">{global.transaction_fee_bearer}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Risk bearer</p>
-              <p className="text-[13px] font-bold text-white capitalize mt-0.5">{global.risk_fee_bearer}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Floor / Cap</p>
-              <p className="text-[13px] font-bold text-white mt-0.5">
-                {global.min_fee != null ? fmtNgn(global.min_fee) : '—'} / {global.max_fee != null ? fmtNgn(global.max_fee) : '—'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -341,9 +328,9 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
         p.percentage_rate = parseFloat(form.percentage_rate) / 100;
       if (form.fee_type !== 'percentage' && form.flat_amount)
         p.flat_amount = parseFloat(form.flat_amount);
-      if (form.min_fee)       p.min_fee        = parseFloat(form.min_fee);
-      if (form.max_fee)       p.max_fee        = parseFloat(form.max_fee);
-      if (form.risk_premium_rate) p.risk_premium_rate = parseFloat(form.risk_premium_rate) / 100;
+      if (form.min_fee)           p.min_fee            = parseFloat(form.min_fee);
+      if (form.max_fee)           p.max_fee            = parseFloat(form.max_fee);
+      if (form.risk_premium_rate) p.risk_premium_rate  = parseFloat(form.risk_premium_rate) / 100;
       p.transaction_fee_bearer = form.transaction_fee_bearer;
       p.risk_fee_bearer        = form.risk_fee_bearer;
       if (form.effective_from)  p.effective_from  = new Date(form.effective_from).toISOString();
@@ -365,7 +352,7 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
         </div>
         <div className="px-6 py-5 flex flex-col gap-4">
           <div><Label>Name</Label>
-            <Input value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Enterprise Rate" />
+            <FieldInput value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Enterprise Rate" />
           </div>
           {!initial && (
             <div>
@@ -414,31 +401,30 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {showPct && <div><Label>Rate (%)</Label>
-              <Input type="number" step="0.0001" min="0" max="100" value={form.percentage_rate}
+              <FieldInput type="number" step="0.0001" min="0" max="100" value={form.percentage_rate}
                 onChange={e => f('percentage_rate', e.target.value)} placeholder="e.g. 2.5" />
             </div>}
             {showFlat && <div><Label>Flat Amount (₦)</Label>
-              <Input type="number" step="0.01" min="0" value={form.flat_amount}
+              <FieldInput type="number" step="0.01" min="0" value={form.flat_amount}
                 onChange={e => f('flat_amount', e.target.value)} placeholder="e.g. 50" />
             </div>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Min Fee (₦)</Label>
-              <Input type="number" step="0.01" min="0" value={form.min_fee}
+              <FieldInput type="number" step="0.01" min="0" value={form.min_fee}
                 onChange={e => f('min_fee', e.target.value)} placeholder="No minimum" />
             </div>
             <div><Label>Max Fee (₦)</Label>
-              <Input type="number" step="0.01" min="0" value={form.max_fee}
+              <FieldInput type="number" step="0.01" min="0" value={form.max_fee}
                 onChange={e => f('max_fee', e.target.value)} placeholder="No cap" />
             </div>
           </div>
 
-          {/* Risk premium */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-3">
             <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest">Risk Premium — Surge-backed transactions</p>
             <div>
               <Label>Risk Premium Rate (%)</Label>
-              <Input type="number" step="0.0001" min="0" max="100" value={form.risk_premium_rate}
+              <FieldInput type="number" step="0.0001" min="0" max="100" value={form.risk_premium_rate}
                 onChange={e => f('risk_premium_rate', e.target.value)} placeholder="e.g. 3.5" />
               <p className="text-[11px] text-amber-600 mt-1">Only charged when Surge bears transaction risk.</p>
             </div>
@@ -464,11 +450,11 @@ function ConfigModal({ initial, groups, merchants, onSave, onClose }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Effective From</Label>
-              <Input type="datetime-local" value={form.effective_from}
+              <FieldInput type="datetime-local" value={form.effective_from}
                 onChange={e => f('effective_from', e.target.value)} />
             </div>
             <div><Label>Effective Until</Label>
-              <Input type="datetime-local" value={form.effective_until}
+              <FieldInput type="datetime-local" value={form.effective_until}
                 onChange={e => f('effective_until', e.target.value)} />
             </div>
           </div>
@@ -514,7 +500,7 @@ function GroupModal({ initial, onSave, onClose }: {
         </div>
         <div className="px-6 py-5 flex flex-col gap-4">
           <div><Label>Group Name</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Enterprise, SMB, High Volume" />
+            <FieldInput value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Enterprise, SMB, High Volume" />
           </div>
           <div><Label>Description</Label>
             <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2}
@@ -600,7 +586,6 @@ function RulesTab({
 }) {
   const getGroupName = (id: string | null) => groups.find(g => g.id === id)?.name ?? '—';
 
-  // Resolved-by logic for each merchant
   const resolveFor = (m: Merchant) => {
     const override = configs.find(c => c.scope === 'merchant' && c.merchant_id === m.id && c.is_active);
     if (override) return { cfg: override, via: 'override' as const };
@@ -613,42 +598,42 @@ function RulesTab({
     return null;
   };
 
-  const groupConfigs  = configs.filter(c => c.scope === 'group');
+  const groupConfigs    = configs.filter(c => c.scope === 'group');
   const merchantConfigs = configs.filter(c => c.scope === 'merchant');
 
   return (
-    <div>
-      <PriorityChain />
+    <div className="flex flex-col gap-5">
+      <ResolutionBar />
       <GlobalHero configs={configs} onSave={onSaveGlobal} onOpenModal={onEditConfig} />
 
-      {/* Group-level rules */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users size={14} className="text-blue-600" />
-            <p className="text-[13px] font-bold text-[#0F172A]">Group Rules</p>
-            <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{groupConfigs.length}</span>
-          </div>
+      {/* Group Rules */}
+      <SectionCard
+        title={<span className="flex items-center gap-1.5"><Users size={13} className="text-blue-600" />Group Rules</span>}
+        subtitle="A shared rate applied to all merchants within a named group."
+        count={groupConfigs.length}
+        countColor="blue"
+        action={
           <button onClick={onOpenModal}
             className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E2E8F0] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#F8FAFC] transition-colors">
             <Plus size={12} /> Add Group Rule
           </button>
-        </div>
+        }
+      >
         {groupConfigs.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-10 text-center">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
-              <Users size={18} className="text-blue-400" />
+          <div className="px-6 py-12 text-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
+              <Users size={16} className="text-blue-400" />
             </div>
             <p className="text-[13px] font-semibold text-[#64748B]">No group rules yet</p>
             <p className="text-[12px] text-[#94A3B8] mt-1">Create a group rule to apply a shared rate to multiple merchants at once.</p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="divide-y divide-[#F1F5F9]">
             {groupConfigs.map(cfg => (
-              <div key={cfg.id} className="bg-white border border-[#E8ECF0] rounded-xl px-5 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                    <Users size={15} className="text-blue-600" />
+              <div key={cfg.id} className="flex items-center justify-between px-5 py-4 hover:bg-[#F8FAFC] transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    <Users size={13} className="text-blue-600" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -667,9 +652,7 @@ function RulesTab({
                     <p className="text-[18px] font-black text-[#0F172A]">{fmtRate(cfg)}</p>
                     {(cfg.min_fee != null || cfg.max_fee != null) && (
                       <p className="text-[11px] text-[#94A3B8]">
-                        {cfg.min_fee != null ? `floor ${fmtNgn(cfg.min_fee)}` : ''}
-                        {cfg.min_fee != null && cfg.max_fee != null ? ' · ' : ''}
-                        {cfg.max_fee != null ? `cap ${fmtNgn(cfg.max_fee)}` : ''}
+                        {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>
@@ -682,107 +665,102 @@ function RulesTab({
             ))}
           </div>
         )}
-      </div>
+      </SectionCard>
 
-      {/* Merchant overrides */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Building2 size={14} className="text-emerald-600" />
-            <p className="text-[13px] font-bold text-[#0F172A]">Merchant Overrides</p>
-            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{merchantConfigs.length}</span>
-          </div>
+      {/* Merchant Overrides */}
+      <SectionCard
+        title={<span className="flex items-center gap-1.5"><Building2 size={13} className="text-emerald-600" />Merchant Overrides</span>}
+        subtitle="Bespoke rates set for a specific merchant — always take precedence over group and global rules."
+        count={merchantConfigs.length}
+        countColor="emerald"
+        action={
           <button onClick={onOpenModal}
             className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E2E8F0] text-[#0F172A] rounded-lg text-[12px] font-semibold hover:bg-[#F8FAFC] transition-colors">
             <Plus size={12} /> Add Override
           </button>
-        </div>
+        }
+      >
         {merchantConfigs.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-10 text-center">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-              <Building2 size={18} className="text-emerald-400" />
+          <div className="px-6 py-12 text-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+              <Building2 size={16} className="text-emerald-400" />
             </div>
             <p className="text-[13px] font-semibold text-[#64748B]">No merchant overrides yet</p>
             <p className="text-[12px] text-[#94A3B8] mt-1">Add a merchant-specific rate for bespoke pricing arrangements.</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="bg-[#F8FAFC]">
-                  {['Merchant', 'Config Name', 'Rate', 'Floor / Cap', 'Status', ''].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {merchantConfigs.map(cfg => {
-                  const merchant = merchants.find(m => m.id === cfg.merchant_id);
-                  return (
-                    <tr key={cfg.id} className="border-t border-[#F1F5F9] hover:bg-[#FAFAFA]">
-                      <td className="px-5 py-3 font-semibold text-[#0F172A]">{merchant?.display_name ?? cfg.merchant_id?.slice(0, 8) ?? '—'}</td>
-                      <td className="px-5 py-3 text-[#64748B]">{cfg.name}</td>
-                      <td className="px-5 py-3 font-bold text-[#0F172A]">{fmtRate(cfg)}</td>
-                      <td className="px-5 py-3 text-[#64748B]">
-                        {(cfg.min_fee != null || cfg.max_fee != null)
-                          ? `${cfg.min_fee != null ? fmtNgn(cfg.min_fee) : '—'} / ${cfg.max_fee != null ? fmtNgn(cfg.max_fee) : '—'}`
-                          : '—'}
-                      </td>
-                      <td className="px-5 py-3"><ActiveBadge active={cfg.is_active} /></td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => onEditConfig(cfg)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
-                          <button onClick={() => onDeleteConfig(cfg.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* All merchants resolved rate */}
-      <div>
-        <p className="text-[13px] font-bold text-[#0F172A] mb-3">Effective Rate per Merchant</p>
-        <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-[#F8FAFC]">
-                {['Merchant', 'Effective Rate', 'Resolved via', 'Group'].map(h => (
-                  <th key={h} className="text-left px-5 py-3 text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">{h}</th>
+                {['Merchant', 'Config Name', 'Rate', 'Floor / Cap', 'Status', ''].map(h => (
+                  <th key={h} className="text-left px-5 py-3 text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest border-b border-[#F1F5F9]">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {merchants.map(m => {
-                const res = resolveFor(m);
+              {merchantConfigs.map(cfg => {
+                const merchant = merchants.find(m => m.id === cfg.merchant_id);
                 return (
-                  <tr key={m.id} className="border-t border-[#F1F5F9] hover:bg-[#FAFAFA]">
-                    <td className="px-5 py-3 font-semibold text-[#0F172A]">{m.display_name}</td>
-                    <td className="px-5 py-3 font-bold text-[#0F172A]">{res ? fmtRate(res.cfg) : '—'}</td>
-                    <td className="px-5 py-3">
-                      {res ? (
-                        <ScopeBadge
-                          scope={res.cfg.scope}
-                          label={res.via === 'override' ? 'Override' : res.via === 'group' ? 'Group' : 'Global'}
-                        />
-                      ) : <span className="text-[#94A3B8]">—</span>}
+                  <tr key={cfg.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
+                    <td className="px-5 py-3.5 font-semibold text-[#0F172A]">{merchant?.display_name ?? cfg.merchant_id?.slice(0, 8) ?? '—'}</td>
+                    <td className="px-5 py-3.5 text-[#64748B]">{cfg.name}</td>
+                    <td className="px-5 py-3.5 font-bold text-[#0F172A]">{fmtRate(cfg)}</td>
+                    <td className="px-5 py-3.5 text-[#64748B]">
+                      {(cfg.min_fee != null || cfg.max_fee != null)
+                        ? `${cfg.min_fee != null ? fmtNgn(cfg.min_fee) : '—'} / ${cfg.max_fee != null ? fmtNgn(cfg.max_fee) : '—'}`
+                        : '—'}
                     </td>
-                    <td className="px-5 py-3 text-[#64748B]">
-                      {m.fee_group_id
-                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-bold"><Users size={10} />{getGroupName(m.fee_group_id)}</span>
-                        : <span className="text-[#94A3B8]">—</span>}
+                    <td className="px-5 py-3.5"><ActiveBadge active={cfg.is_active} /></td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => onEditConfig(cfg)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
+                        <button onClick={() => onDeleteConfig(cfg.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      </div>
+        )}
+      </SectionCard>
+
+      {/* Effective Rate per Merchant */}
+      <SectionCard
+        title="Effective Rate per Merchant"
+        subtitle="The rate each merchant actually pays, resolved through the priority chain."
+      >
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="bg-[#F8FAFC]">
+              {['Merchant', 'Effective Rate', 'Resolved via', 'Group'].map(h => (
+                <th key={h} className="text-left px-5 py-3 text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest border-b border-[#F1F5F9]">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {merchants.map(m => {
+              const res = resolveFor(m);
+              return (
+                <tr key={m.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
+                  <td className="px-5 py-3.5 font-semibold text-[#0F172A]">{m.display_name}</td>
+                  <td className="px-5 py-3.5 font-bold text-[#0F172A]">{res ? fmtRate(res.cfg) : '—'}</td>
+                  <td className="px-5 py-3.5">
+                    {res
+                      ? <ScopeBadge scope={res.cfg.scope} label={res.via === 'override' ? 'Override' : res.via === 'group' ? 'Group' : 'Global'} />
+                      : <span className="text-[#94A3B8]">—</span>}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {m.fee_group_id
+                      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-bold"><Users size={10} />{getGroupName(m.fee_group_id)}</span>
+                      : <span className="text-[#94A3B8]">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </SectionCard>
     </div>
   );
 }
@@ -793,8 +771,7 @@ function RulesTab({
 
 function GroupsTab({
   groups, configs, merchants,
-  onEditGroup, onDeleteGroup, onCreateGroup,
-  onAssignMerchant,
+  onEditGroup, onDeleteGroup, onCreateGroup, onAssignMerchant,
 }: {
   groups: FeeGroup[]; configs: FeeConfig[]; merchants: Merchant[];
   onEditGroup: (g: FeeGroup) => void; onDeleteGroup: (id: string) => void;
@@ -809,17 +786,7 @@ function GroupsTab({
   const unassigned = merchants.filter(m => !m.fee_group_id);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-[13px] text-[#64748B]">
-          Groups let you apply one rate to many merchants. Assign merchants using the button on each card.
-        </p>
-        <button onClick={onCreateGroup}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#0F172A] text-white rounded-xl text-[13px] font-bold hover:opacity-90 transition-opacity shrink-0">
-          <Plus size={14} /> New Group
-        </button>
-      </div>
-
+    <div className="flex flex-col gap-5">
       {groups.length === 0 ? (
         <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-16 text-center">
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
@@ -833,114 +800,110 @@ function GroupsTab({
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {groups.map(g => {
-            const cfg     = getGroupCfg(g.id);
-            const members = merchants.filter(m => m.fee_group_id === g.id);
-            const open    = openGroupId === g.id;
-            return (
-              <div key={g.id} className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
-                {/* Group header */}
-                <div className="flex items-center justify-between px-5 py-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                      <Users size={16} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-[14px] font-bold text-[#0F172A]">{g.name}</p>
-                        {cfg && <ActiveBadge active={cfg.is_active} />}
-                      </div>
-                      <p className="text-[12px] text-[#94A3B8] mt-0.5">
-                        {g.description || 'No description'} · {members.length} {members.length === 1 ? 'merchant' : 'merchants'}
-                      </p>
-                    </div>
+        groups.map(g => {
+          const cfg     = getGroupCfg(g.id);
+          const members = merchants.filter(m => m.fee_group_id === g.id);
+          const open    = openGroupId === g.id;
+          return (
+            <div key={g.id} className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    <Users size={15} className="text-blue-600" />
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-[20px] font-black text-[#0F172A]">{cfg ? fmtRate(cfg) : <span className="text-[#CBD5E1] text-[14px] font-semibold">No rate set</span>}</p>
-                      {cfg && (cfg.min_fee != null || cfg.max_fee != null) && (
-                        <p className="text-[11px] text-[#94A3B8]">
-                          {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[14px] font-bold text-[#0F172A]">{g.name}</p>
+                      {cfg && <ActiveBadge active={cfg.is_active} />}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => onEditGroup(g)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
-                      <button onClick={() => onDeleteGroup(g.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
-                      <button onClick={() => setOpenGroupId(open ? null : g.id)}
-                        className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors ml-1">
-                        {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                      </button>
-                    </div>
+                    <p className="text-[12px] text-[#94A3B8] mt-0.5">
+                      {g.description || 'No description'} · {members.length} {members.length === 1 ? 'merchant' : 'merchants'}
+                    </p>
                   </div>
                 </div>
-
-                {/* Members list */}
-                {open && (
-                  <div className="border-t border-[#F1F5F9]">
-                    {members.length === 0 ? (
-                      <p className="px-5 py-5 text-[13px] text-[#94A3B8] text-center">
-                        No merchants in this group. Use "Assign Group" below to add some.
+                <div className="flex items-center gap-5">
+                  <div className="text-right">
+                    <p className="text-[20px] font-black text-[#0F172A]">
+                      {cfg ? fmtRate(cfg) : <span className="text-[#CBD5E1] text-[14px] font-semibold">No rate set</span>}
+                    </p>
+                    {cfg && (cfg.min_fee != null || cfg.max_fee != null) && (
+                      <p className="text-[11px] text-[#94A3B8]">
+                        {[cfg.min_fee != null && `floor ${fmtNgn(cfg.min_fee)}`, cfg.max_fee != null && `cap ${fmtNgn(cfg.max_fee)}`].filter(Boolean).join(' · ')}
                       </p>
-                    ) : (
-                      <div className="divide-y divide-[#F1F5F9]">
-                        {members.map(m => (
-                          <div key={m.id} className="flex items-center justify-between px-5 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
-                                <Building2 size={13} className="text-[#64748B]" />
-                              </div>
-                              <span className="text-[13px] font-semibold text-[#0F172A]">{m.display_name}</span>
-                            </div>
-                            <button onClick={() => onAssignMerchant(m)}
-                              className="text-[12px] font-semibold text-[#64748B] hover:text-[#E11D48] transition-colors">
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
                     )}
                   </div>
-                )}
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => onEditGroup(g)} className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors"><Pencil size={13} /></button>
+                    <button onClick={() => onDeleteGroup(g.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-[#94A3B8] hover:text-[#E11D48] transition-colors"><Trash2 size={13} /></button>
+                    <button onClick={() => setOpenGroupId(open ? null : g.id)}
+                      className="p-1.5 hover:bg-[#F1F5F9] rounded-lg text-[#94A3B8] hover:text-[#0F172A] transition-colors ml-0.5">
+                      {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                    </button>
+                  </div>
+                </div>
               </div>
-            );
-          })}
-        </div>
+
+              {open && (
+                <div className="border-t border-[#F1F5F9]">
+                  {members.length === 0 ? (
+                    <p className="px-5 py-5 text-[13px] text-[#94A3B8] text-center">
+                      No merchants in this group yet.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-[#F1F5F9]">
+                      {members.map(m => (
+                        <div key={m.id} className="flex items-center justify-between px-5 py-3 hover:bg-[#F8FAFC]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
+                              <Building2 size={13} className="text-[#64748B]" />
+                            </div>
+                            <span className="text-[13px] font-semibold text-[#0F172A]">{m.display_name}</span>
+                          </div>
+                          <button onClick={() => onAssignMerchant(m)}
+                            className="text-[12px] font-semibold text-[#94A3B8] hover:text-[#E11D48] transition-colors">
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
       )}
 
-      {/* Unassigned merchants */}
       {unassigned.length > 0 && (
-        <div className="mt-6">
-          <p className="text-[12px] font-bold text-[#94A3B8] uppercase tracking-widest mb-3">
-            Unassigned Merchants — using Global Default
-          </p>
-          <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
-            <div className="divide-y divide-[#F1F5F9]">
-              {unassigned.map(m => (
-                <div key={m.id} className="flex items-center justify-between px-5 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
-                      <Building2 size={13} className="text-[#64748B]" />
-                    </div>
-                    <span className="text-[13px] font-semibold text-[#0F172A]">{m.display_name}</span>
+        <SectionCard
+          title="Unassigned Merchants"
+          subtitle="These merchants have no group assignment and fall back to the global default rate."
+          count={unassigned.length}
+        >
+          <div className="divide-y divide-[#F1F5F9]">
+            {unassigned.map(m => (
+              <div key={m.id} className="flex items-center justify-between px-5 py-3 hover:bg-[#F8FAFC] transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
+                    <Building2 size={13} className="text-[#64748B]" />
                   </div>
-                  <button onClick={() => onAssignMerchant(m)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#0F172A] rounded-lg text-[11px] font-semibold transition-colors">
-                    <Users size={11} /> Assign to Group
-                  </button>
+                  <span className="text-[13px] font-semibold text-[#0F172A]">{m.display_name}</span>
                 </div>
-              ))}
-            </div>
+                <button onClick={() => onAssignMerchant(m)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#0F172A] rounded-lg text-[11px] font-semibold transition-colors">
+                  <Users size={11} /> Assign to Group
+                </button>
+              </div>
+            ))}
           </div>
-        </div>
+        </SectionCard>
       )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Tab: Preview
+// Tab: Preview  (two-column layout at full width)
 // ---------------------------------------------------------------------------
 
 function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: Merchant[] }) {
@@ -965,20 +928,18 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
   const selectedMerchant = merchants.find(m => m.id === merchantId);
 
   return (
-    <div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+      {/* Left: inputs */}
       <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
-        <div className="px-8 pt-8 pb-6 border-b border-[#F1F5F9]">
-          <div className="flex items-center gap-2 mb-1">
-            <Calculator size={16} className="text-[#64748B]" />
-            <p className="text-[15px] font-black text-[#0F172A]">Fee Preview</p>
+        <div className="px-5 py-4 border-b border-[#F1F5F9]">
+          <div className="flex items-center gap-2 mb-0.5">
+            <Calculator size={14} className="text-[#64748B]" />
+            <p className="text-[13px] font-bold text-[#0F172A]">Fee Calculator</p>
           </div>
-          <p className="text-[13px] text-[#64748B]">
-            Enter an amount and optionally pick a merchant to see exactly how the fee resolves.
-          </p>
+          <p className="text-[11px] text-[#94A3B8]">Enter an amount and optionally pick a merchant to see exactly how the fee resolves.</p>
         </div>
 
-        <div className="px-8 py-6 flex flex-col gap-5">
-          {/* Amount */}
+        <div className="px-5 py-5 flex flex-col gap-4">
           <div>
             <Label>Transaction Amount (NGN)</Label>
             <div className="relative">
@@ -991,9 +952,8 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
             </div>
           </div>
 
-          {/* Merchant */}
           <div>
-            <Label>Merchant <span className="normal-case font-normal text-[#94A3B8]">(optional — leave blank for global rate)</span></Label>
+            <Label>Merchant <span className="normal-case font-normal text-[#94A3B8]">(optional)</span></Label>
             <select value={merchantId} onChange={e => { setMerchantId(e.target.value); setResult(null); }}
               className="w-full px-3 py-2.5 border border-[#E2E8F0] rounded-xl text-[13px] text-[#0F172A] outline-none focus:border-[#0F172A] bg-white">
               <option value="">Global default</option>
@@ -1001,7 +961,6 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
             </select>
           </div>
 
-          {/* Risk bearer toggle */}
           <div>
             <Label>Risk Model</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -1019,84 +978,98 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
           </div>
 
           <button onClick={() => void run()} disabled={loading || !amount}
-            className="w-full py-3 bg-[#0F172A] text-white rounded-xl text-[14px] font-bold disabled:opacity-40 transition-opacity">
+            className="w-full py-3 bg-[#0F172A] text-white rounded-xl text-[13px] font-bold disabled:opacity-40 transition-opacity">
             {loading ? 'Calculating…' : 'Calculate Fee'}
           </button>
           {error && <p className="text-[#E11D48] text-[12px] font-semibold">{error}</p>}
         </div>
+      </div>
 
-        {/* Result */}
-        {result && (
-          <div className="border-t border-[#F1F5F9] px-8 py-6">
-            {/* Resolution trace */}
-            <div className="flex items-center gap-2 mb-5 p-3 bg-[#F8FAFC] rounded-xl flex-wrap">
-              <Info size={13} className="text-[#64748B] shrink-0" />
-              <p className="text-[12px] text-[#64748B]">
-                Resolved via <span className="font-bold text-[#0F172A]">{result.config_name}</span>
-              </p>
-              <ScopeBadge scope={result.resolved_scope} />
-              {selectedMerchant && (
-                <span className="text-[12px] text-[#94A3B8]">for {selectedMerchant.display_name}</span>
-              )}
-              <span className={`ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full ${result.risk_bearer === 'surge_backed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                {result.risk_bearer === 'surge_backed' ? 'Surge-backed' : 'Merchant-backed'}
-              </span>
+      {/* Right: result */}
+      <div>
+        {!result ? (
+          <div className="bg-white border border-dashed border-[#E8ECF0] rounded-2xl px-6 py-16 text-center">
+            <div className="w-10 h-10 rounded-xl bg-[#F1F5F9] flex items-center justify-center mx-auto mb-3">
+              <Calculator size={18} className="text-[#CBD5E1]" />
+            </div>
+            <p className="text-[13px] font-semibold text-[#64748B]">Results will appear here</p>
+            <p className="text-[12px] text-[#94A3B8] mt-1">Enter an amount and click Calculate.</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#F1F5F9]">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Info size={13} className="text-[#64748B] shrink-0" />
+                <p className="text-[12px] text-[#64748B]">
+                  Resolved via <span className="font-bold text-[#0F172A]">{result.config_name}</span>
+                </p>
+                <ScopeBadge scope={result.resolved_scope} />
+                {selectedMerchant && (
+                  <span className="text-[12px] text-[#94A3B8]">for {selectedMerchant.display_name}</span>
+                )}
+                <span className={`ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full ${result.risk_bearer === 'surge_backed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                  {result.risk_bearer === 'surge_backed' ? 'Surge-backed' : 'Merchant-backed'}
+                </span>
+              </div>
             </div>
 
-            {/* Numbers */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-[#F8FAFC] rounded-xl p-4">
-                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Gross Amount</p>
-                <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.gross_amount)}</p>
-              </div>
-              <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
-                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Total Fee</p>
-                <p className="text-[22px] font-black text-violet-700 mt-1">{fmtNgn(result.fee_amount)}</p>
-              </div>
-              <div className="bg-[#F8FAFC] rounded-xl p-4">
-                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                  Transaction Fee <span className="normal-case font-normal">({result.transaction_fee_bearer} pays)</span>
-                </p>
-                <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.transaction_fee)}</p>
-              </div>
-              {result.risk_fee > 0 ? (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
-                    Risk Premium <span className="normal-case font-normal">({result.risk_fee_bearer} pays)</span>
-                  </p>
-                  <p className="text-[22px] font-black text-amber-700 mt-1">{fmtNgn(result.risk_fee)}</p>
-                </div>
-              ) : (
+            <div className="p-5 flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-[#F8FAFC] rounded-xl p-4">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Risk Premium</p>
-                  <p className="text-[22px] font-black text-[#CBD5E1] mt-1">₦0.00</p>
-                  <p className="text-[11px] text-[#94A3B8] mt-0.5">Not applicable — merchant-backed</p>
+                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Gross Amount</p>
+                  <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.gross_amount)}</p>
                 </div>
-              )}
-              <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
+                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Total Fee</p>
+                  <p className="text-[22px] font-black text-violet-700 mt-1">{fmtNgn(result.fee_amount)}</p>
+                </div>
+                <div className="bg-[#F8FAFC] rounded-xl p-4">
+                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">
+                    Tx Fee <span className="normal-case font-normal">({result.transaction_fee_bearer} pays)</span>
+                  </p>
+                  <p className="text-[22px] font-black text-[#0F172A] mt-1">{fmtNgn(result.transaction_fee)}</p>
+                </div>
+                {result.risk_fee > 0 ? (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                      Risk Premium <span className="normal-case font-normal">({result.risk_fee_bearer} pays)</span>
+                    </p>
+                    <p className="text-[22px] font-black text-amber-700 mt-1">{fmtNgn(result.risk_fee)}</p>
+                  </div>
+                ) : (
+                  <div className="bg-[#F8FAFC] rounded-xl p-4">
+                    <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Risk Premium</p>
+                    <p className="text-[22px] font-black text-[#CBD5E1] mt-1">₦0.00</p>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">Merchant-backed</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Merchant Payable</p>
                 <div className="flex items-baseline gap-3 mt-1">
                   <p className="text-[26px] font-black text-emerald-700">{fmtNgn(result.merchant_payable)}</p>
                   <p className="text-[13px] font-semibold text-emerald-500">{result.effective_rate_pct.toFixed(4)}% effective rate</p>
                 </div>
               </div>
-            </div>
 
-            {/* Visual bar */}
-            <div className="h-2.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.min(result.effective_rate_pct * 10, 100)}%`,
-                  background: result.risk_bearer === 'surge_backed'
-                    ? 'linear-gradient(90deg, #8B5CF6 0%, #F59E0B 100%)'
-                    : '#8B5CF6',
-                }}
-              />
-            </div>
-            <div className="flex justify-between mt-1">
-              <p className="text-[10px] text-[#94A3B8]">0%</p>
-              <p className="text-[10px] text-[#94A3B8]">10%</p>
+              <div>
+                <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(result.effective_rate_pct * 10, 100)}%`,
+                      background: result.risk_bearer === 'surge_backed'
+                        ? 'linear-gradient(90deg, #8B5CF6 0%, #F59E0B 100%)'
+                        : '#8B5CF6',
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <p className="text-[10px] text-[#94A3B8]">0%</p>
+                  <p className="text-[10px] text-[#94A3B8]">10%</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1215,10 +1188,8 @@ export default function FeeConfigPage() {
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <p className="text-[22px] font-black text-[#0F172A] tracking-tight">Fee Configuration</p>
-          <p className="text-[13px] text-[#64748B] mt-0.5">
-            Set pricing rules at the platform, group, or merchant level.
-          </p>
+          <h1 className="text-[22px] font-black text-[#0F172A] tracking-tight mb-1">Fee Configuration</h1>
+          <p className="text-[13px] text-[#64748B]">Set pricing rules at the platform, group, or merchant level.</p>
         </div>
         <button onClick={() => { setEditingConfig(undefined); setShowConfigModal(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#0F172A] text-white rounded-xl text-[13px] font-bold hover:opacity-90 transition-opacity shrink-0">
@@ -1241,7 +1212,6 @@ export default function FeeConfigPage() {
         ))}
       </div>
 
-      {/* Tab content */}
       {activeTab === 'rules' && (
         <RulesTab
           configs={configs} groups={groups} merchants={merchants}
