@@ -965,7 +965,7 @@ function PreviewTab({ configs, merchants }: { configs: FeeConfig[]; merchants: M
   const selectedMerchant = merchants.find(m => m.id === merchantId);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div>
       <div className="bg-white border border-[#E8ECF0] rounded-2xl overflow-hidden">
         <div className="px-8 pt-8 pb-6 border-b border-[#F1F5F9]">
           <div className="flex items-center gap-2 mb-1">
@@ -1195,7 +1195,7 @@ export default function FeeConfigPage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div>
       {toast && <Toast msg={toast.msg} ok={toast.ok} onDismiss={() => setToast(null)} />}
 
       {showConfigModal && (
