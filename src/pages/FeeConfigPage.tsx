@@ -1227,13 +1227,13 @@ export default function FeeConfigPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-[#F1F5F9] p-1 rounded-xl w-fit">
+      <div className="flex gap-0 border-b border-[#E8ECF0] mb-6">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all ${activeTab === t.id ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}>
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-bold border-b-2 transition-colors ${activeTab === t.id ? 'border-[#0F172A] text-[#0F172A]' : 'border-transparent text-[#94A3B8] hover:text-[#64748B]'}`}>
             {t.label}
             {t.count !== undefined && (
-              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === t.id ? 'bg-[#F1F5F9] text-[#64748B]' : 'bg-white/60 text-[#94A3B8]'}`}>
+              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === t.id ? 'bg-[#F1F5F9] text-[#64748B]' : 'bg-[#F1F5F9] text-[#94A3B8]'}`}>
                 {t.count}
               </span>
             )}
