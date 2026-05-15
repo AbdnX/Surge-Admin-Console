@@ -603,7 +603,6 @@ function RulesTab({
 
   return (
     <div className="flex flex-col gap-5">
-      <ResolutionBar />
       <GlobalHero configs={configs} onSave={onSaveGlobal} onOpenModal={onEditConfig} />
 
       {/* Group Rules */}
